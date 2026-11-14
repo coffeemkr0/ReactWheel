@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: ReactWheel
+## Notes: Radial menu of quick reactions (like Teams chat) for replying to chat. Hold a key, flick the mouse, release.
+## Author: coffeemkr0
+## Version: 0.1.0
+## SavedVariables: ReactWheelDB
+ReactWheel.lua
+Bindings.xml
