@@ -34,9 +34,7 @@ end
 
 local function Send(text)
 	local t, target = Destination()
-	if t == "CHANNEL" then
-		SendChatMessage(text, "CHANNEL", nil, target)
-	elseif t == "WHISPER" then
+	if t == "WHISPER" then
 		SendChatMessage(text, "WHISPER", nil, target)
 	else
 		SendChatMessage(text, t)
@@ -132,10 +130,8 @@ end
 -- Track who to reply to.
 local tracker = CreateFrame("Frame")
 local EVENTS = {
-	CHAT_MSG_WHISPER = "WHISPER", CHAT_MSG_PARTY = "PARTY", CHAT_MSG_RAID = "RAID",
-	CHAT_MSG_RAID_LEADER = "RAID", CHAT_MSG_GUILD = "GUILD", CHAT_MSG_OFFICER = "OFFICER",
-	CHAT_MSG_SAY = "SAY", CHAT_MSG_YELL = "YELL", CHAT_MSG_CHANNEL = "CHANNEL",
-	CHAT_MSG_BATTLEGROUND = "BATTLEGROUND", CHAT_MSG_INSTANCE_CHAT = "INSTANCE_CHAT",
+	CHAT_MSG_WHISPER = "WHISPER", CHAT_MSG_PARTY = "PARTY", CHAT_MSG_PARTY_LEADER = "PARTY",
+	CHAT_MSG_RAID = "RAID", CHAT_MSG_RAID_LEADER = "RAID", CHAT_MSG_SAY = "SAY",
 }
 for ev in pairs(EVENTS) do pcall(tracker.RegisterEvent, tracker, ev) end -- skip events this client lacks
 tracker:RegisterEvent("VARIABLES_LOADED")
@@ -145,9 +141,7 @@ tracker:SetScript("OnEvent", function(self, e, a1, a2, a3, a4, a5, a6, a7, a8)
 	if ev == "VARIABLES_LOADED" then Reactions() return end
 	local t = EVENTS[ev]
 	if not t then return end
-	if t == "CHANNEL" then
-		reply = { type = "CHANNEL", target = a8 or arg8 }
-	elseif t == "WHISPER" then
+	if t == "WHISPER" then
 		reply = { type = "WHISPER", target = sender }
 	else
 		reply = { type = t }
@@ -177,10 +171,12 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		return
 	elseif cmd == "reply" then
 		local m = string.upper(rest)
-		if m == "AUTO" or m == "" then reply = nil else reply = { type = m } end
+		if m == "AUTO" or m == "" then reply = nil
+		elseif m == "PARTY" or m == "RAID" or m == "SAY" then reply = { type = m }
+		else Print("only auto, party, raid or say") return end
 		Print("reply target: " .. (reply and m or "auto"))
 		return
 	end
 	Print("Bind a key in Key Bindings > ReactWheel; hold, flick, release.")
-	Print("/rw set <1-8> <text>   /rw reset   /rw reply <auto|party|raid|guild|say|yell>")
+	Print("/rw set <1-8> <text>   /rw reset   /rw reply <auto|party|raid|say>")
 end

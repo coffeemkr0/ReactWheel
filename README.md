@@ -2,7 +2,7 @@
 
 A radial quick-reaction menu for WoW chat, inspired by Teams reactions.
 Hold a key, flick the mouse toward a reaction, release — it's sent to whoever last spoke to you
-(whisper, party, raid, guild, say, or channel).
+(whisper, party, raid, or say only — never guild or channels).
 
 Defaults: `+1  LOL  GG  thx!  <3  brb  o7  ?!`
 
@@ -16,7 +16,7 @@ Copy the `ReactWheel` folder into `Interface/AddOns/`.
 ## Commands
 - `/rw set <1-8> <text>` customise a slot (1 = top, clockwise)
 - `/rw reset` restore defaults
-- `/rw reply <auto|party|raid|guild|say|yell>` force the destination
+- `/rw reply <auto|party|raid|say>` force the destination
 
 ## Compatibility
 Uses `## Interface: 16001` and is written in Lua 5.0-compatible style.
