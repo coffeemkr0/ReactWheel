@@ -67,12 +67,12 @@ local function Check(parent, label, x, y, get, set)
 end
 
 -- left-click cycles forward, right-click backward
-local function Cycle(parent, label, x, y, options, get, set, width)
-	Text(parent, label, x, y - 4, "GameFontNormalSmall")
+local function Cycle(parent, label, x, y, options, get, set, width, labelWidth)
+	Text(parent, label, x, y - 5, "GameFontNormalSmall")
 	local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
 	b:SetWidth(width or 150)
 	b:SetHeight(22)
-	b:SetPoint("TOPLEFT", parent, "TOPLEFT", x + 160, y)
+	b:SetPoint("TOPLEFT", parent, "TOPLEFT", x + (labelWidth or 160), y)
 	b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	local function idx()
 		local v = get()
@@ -217,9 +217,9 @@ local function BuildDisplayTab(t)
 
 	Text(t, "Behaviour", 250, -8)
 	Cycle(t, "Opening", 250, -34, { { "toggle", "Press to open / close" }, { "hold", "Hold to show" } },
-		function() return S().openMode end, function(v) S().openMode = v end, 130)
+		function() return S().openMode end, function(v) S().openMode = v end, 165, 72)
 	Cycle(t, "Appears", 250, -62, { { "cursor", "At the cursor" }, { "center", "Screen centre" } },
-		function() return S().openAt end, function(v) S().openAt = v end, 130)
+		function() return S().openAt end, function(v) S().openAt = v end, 165, 72)
 	Check(t, "Switch wheel to suit the situation", 250, -246, function() return S().autoWheel end, function(v) S().autoWheel = v end)
 	Check(t, "Play sounds", 250, -270, function() return S().sounds end, function(v) S().sounds = v end)
 	Check(t, "Show the minimap button", 250, -92,
@@ -236,7 +236,7 @@ local function BuildDisplayTab(t)
 			end
 			selected = nil
 			RefreshAll()
-		end, 130)
+		end, 165, 72)
 	Button(t, "Key bindings...", 250, -160, 130, function()
 		local ok = pcall(function()
 			if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
