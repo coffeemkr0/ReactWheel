@@ -104,17 +104,28 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("VARIABLES_LOADED")
 for _, ev in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do pcall(frame.RegisterEvent, frame, ev) end
 for ev in pairs(OBSERVED) do pcall(frame.RegisterEvent, frame, ev) end -- skip events this client lacks
-frame:SetScript("OnEvent", function(_, event, a1, a2)
+frame:SetScript("OnEvent", function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 	if event == "VARIABLES_LOADED" then RW.InitDB() return end
 	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then RW.OnActionBlocked(a1, a2) return end
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
-	if RW.BaseName(a2) == UnitName("player") then
+	if RW.BaseName(a2) == UnitName("player") or (a12 and UnitGUID and a12 == UnitGUID("player")) then
 		if event == "CHAT_MSG_SAY" then RW.sayUnlocked = true end -- the game accepts our /say once the player has said something
 		return
 	end -- our own messages say nothing about who to answer
 	RW.Targeting.Observe(kind, a2, GetTime(), RW.P().settings)
 end)
+
+-- Any /say the player sends (typed, macro, or by us) tells us the game will accept our /say.
+-- Hooks fire only when the call actually went through, and we skip our own in-flight sends.
+function RW.NoteOutgoing(_, chatType)
+	if RW.pendingSend then return end
+	if chatType and string.upper(chatType) == "SAY" then RW.sayUnlocked = true end
+end
+if hooksecurefunc then
+	pcall(hooksecurefunc, "SendChatMessage", RW.NoteOutgoing)
+	if C_ChatInfo and C_ChatInfo.SendChatMessage then pcall(hooksecurefunc, C_ChatInfo, "SendChatMessage", RW.NoteOutgoing) end
+end
 
 ---------------------------------------------------------------------------
 -- Slash commands
@@ -165,6 +176,7 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		RW.Print("debug " .. (RW.debug and "on" or "off"))
 		if RW.debug then
 			local d = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, RW.P().settings)
+			RW.Print("direct /say unlocked: " .. tostring(RW.sayUnlocked))
 			RW.Print("would send to: " .. d.label .. " (" .. d.reason .. ", confidence " .. d.confidence .. ")")
 		end
 	elseif cmd == "size" then
