@@ -65,10 +65,69 @@ local function Sanitize(p)
 	end
 end
 
+---------------------------------------------------------------------------
+-- Wheel management (used by the settings window)
+---------------------------------------------------------------------------
+function RW.NewWheel(name, copyFrom)
+	local p = RW.P()
+	local n = 1
+	while p.wheels["w" .. n] do n = n + 1 end
+	local id = "w" .. n
+	if copyFrom and p.wheels[copyFrom] then
+		p.wheels[id] = RW.Copy(p.wheels[copyFrom])
+		p.wheels[id].name = name or (p.wheels[copyFrom].name .. " copy")
+	else
+		p.wheels[id] = { name = name or "New wheel", slots = 8, items = {} }
+	end
+	p.order[#p.order + 1] = id
+	return id
+end
+
+function RW.DeleteWheel(id)
+	local p = RW.P()
+	if #p.order <= 1 or not p.wheels[id] then return false end
+	p.wheels[id] = nil
+	for i, w in ipairs(p.order) do if w == id then table.remove(p.order, i) break end end
+	for _, w in pairs(p.wheels) do
+		for _, s in pairs(w.items) do if s.opensWheel == id then s.opensWheel = nil end end
+	end
+	if p.current == id then p.current = p.order[1] end
+	return true
+end
+
+function RW.MoveWheel(id, delta)
+	local o = RW.P().order
+	for i, w in ipairs(o) do
+		if w == id then
+			local j = i + delta
+			if j < 1 or j > #o then return false end
+			o[i], o[j] = o[j], o[i]
+			return true
+		end
+	end
+	return false
+end
+
+function RW.SetSlotCount(id, n)
+	local w = RW.P().wheels[id]
+	if not w then return end
+	w.slots = math.max(4, math.min(12, math.floor(n + 0.5)))
+	for i = 1, w.slots do w.items[i] = w.items[i] or {} end
+end
+
+function RW.MoveRule(index, delta)
+	local r = RW.P().settings.rules
+	local j = index + delta
+	if j < 1 or j > #r then return false end
+	r[index], r[j] = r[j], r[index]
+	return true
+end
+
 function RW.InitDB()
 	ReactWheelDB = ReactWheelDB or {}
 	ReactWheelCharDB = ReactWheelCharDB or {}
 	local db = ReactWheelDB
+	db.minimap = db.minimap or { hide = false, angle = 215 }
 	if not db.profile then
 		local p = RW.NewProfile()
 		-- carry over customised thumbs text from the pre-1.0 versions

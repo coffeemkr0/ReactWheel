@@ -1,6 +1,6 @@
 -- Run via tests/run_tests.py (Lua 5.1 through lupa). Run from the repo root.
 dofile("tests/wow_stubs.lua")
-for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel", "Editor" }) do
+for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel", "Editor", "Minimap", "Config" }) do
 	assert(loadfile(f .. ".lua"), f)()
 end
 local RW = ReactWheel
@@ -164,6 +164,22 @@ eq(string.len(RW.SlotFromFields({ text = string.rep("x", 400) }).text), 250, "te
 eq(RW.IsEmpty(RW.SlotFromFields({})), true, "all-empty fields give an empty slot")
 RW.OpenSlotEditor("quick", 1)
 RW.EditSlot("quick", 2)
+
+-- wheel management
+local nid = RW.NewWheel("Mine"); eq(RW.P().wheels[nid].name, "Mine", "new wheel"); eq(#RW.P().order, 5, "order grew")
+local cid = RW.NewWheel(nil, "quick"); eq(RW.P().wheels[cid].items[1].text, RW.P().wheels.quick.items[1].text, "copied wheel")
+RW.P().wheels.quick.items[8].opensWheel = nid
+eq(RW.DeleteWheel(nid), true, "delete"); eq(RW.P().wheels.quick.items[8].opensWheel, nil, "sub-wheel link cleared")
+eq(RW.MoveWheel(cid, -1), true, "move up"); eq(RW.P().order[#RW.P().order - 1], cid, "moved")
+RW.SetSlotCount(cid, 12); eq(RW.P().wheels[cid].slots, 12, "12 slots"); eq(#RW.P().wheels[cid].items, 12, "items filled")
+RW.SetSlotCount(cid, 99); eq(RW.P().wheels[cid].slots, 12, "slot cap"); RW.SetSlotCount(cid, 1); eq(RW.P().wheels[cid].slots, 4, "slot floor")
+RW.DeleteWheel(cid)
+local r1 = RW.P().settings.rules[1].id
+eq(RW.MoveRule(1, 1), true, "rule down"); eq(RW.P().settings.rules[2].id, r1, "rule moved"); RW.MoveRule(2, -1)
+eq(RW.MoveRule(1, -1), false, "rule can't move above top")
+-- settings window / minimap smoke
+RW.ShowConfig(); RW.UpdateMinimap()
+_COMBAT = true; RW.ShowConfig(); _COMBAT = false
 
 -- UI smoke test (stubbed frames): open, page, close, activate
 RW.OpenWheel()

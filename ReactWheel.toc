@@ -12,3 +12,5 @@ Targeting.lua
 Actions.lua
 Wheel.lua
 Editor.lua
+Minimap.lua
+Config.lua

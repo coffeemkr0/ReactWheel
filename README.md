@@ -14,6 +14,11 @@ Copy the `ReactWheel` folder into `Interface/AddOns/` and restart the game.
 
 Starter wheels: **Quick Chat**, **Dungeon / Raid**, **Social / Guild**, **Emotes**.
 
+## Customizing
+- **Minimap button:** left-click opens the settings window, right-click lists your wheels, drag to move it.
+- **Settings window** (`/rw config`): Wheels (add, copy, delete, reorder, rename, 4-12 slots, edit any slot), Display (sizes, open mode, per-character wheels), Targeting (smart reply rules and timings), Emotes.
+- **Right-click a slice** to edit that slot: label, text, emote, slash command, destination, icon, colour, or make it open another wheel.
+
 ## Where does it send?
 By default reactions use *smart reply*:
 1. a whisper received in the last 30 seconds -> reply to that whisper

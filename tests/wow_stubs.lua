@@ -44,3 +44,4 @@ GameTooltip = proxy()
 _PREFILL = {}
 function ChatFrame_OpenChat(m) _PREFILL[#_PREFILL + 1] = m end
 function UnitGUID() return "Player-1" end
+Minimap = proxy()
