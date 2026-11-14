@@ -62,11 +62,15 @@ local function Destination()
 	return "SAY"
 end
 
--- Reactions that also perform an emote (keyed by the text sent).
-local EMOTES = { ["thanks!"] = "THANK" }
+-- Every reaction also performs an emote (keyed by the slot's value).
+local EMOTES = {
+	["{up}"] = "NOD", ["{down}"] = "NO", ["\226\153\165"] = "LOVE", ["LOL"] = "LAUGH",
+	["GG"] = "CLAP", ["thanks!"] = "THANK", ["omw"] = "WAVE", ["what?"] = "CONFUSED",
+}
 
-local function Send(text)
-	if EMOTES[text] and DoEmote then DoEmote(EMOTES[text]) end
+local function Send(raw)
+	if EMOTES[raw] and DoEmote then DoEmote(EMOTES[raw]) end
+	local text = Resolve(raw)
 	local t, target = Destination()
 	if t == "WHISPER" then
 		SendChatMessage(text, "WHISPER", nil, target)
@@ -140,7 +144,7 @@ local function Build()
 		b:SetScript("OnClick", function(f, btn)
 			local self = this or b
 			if (btn or arg1) == "RightButton" then wheel:Hide() return end -- right-click closes
-			Send(Resolve(Reactions()[self.index]))
+			Send(Reactions()[self.index])
 			wheel:Hide()
 		end)
 		buttons[i] = b
@@ -186,7 +190,7 @@ end
 function ReactWheel_Release()
 	if not wheel or not wheel:IsVisible() then return end
 	wheel:Hide()
-	if selected then Send(Resolve(Reactions()[selected])) end
+	if selected then Send(Reactions()[selected]) end
 end
 
 -- Track who to reply to.

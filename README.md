@@ -25,3 +25,6 @@ If your client uses a different interface number, edit the `.toc`. Untested in-g
 
 ## License
 MIT
+
+## Emotes
+Each default reaction also plays an emote: nod, no, love, laugh, clap, thank, wave, confused.
