@@ -13,7 +13,12 @@ local ICONS = {
 	["{down}"] = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsDown", r = 1,   g = 0.3, b = 0.3, send = "-1" },
 }
 
-local function Resolve(r) return ICONS[r] and ICONS[r].send or r end
+local function Resolve(r)
+	local ic = ICONS[r]
+	if not ic then return r end
+	local o = ReactWheelDB and ((r == "{up}" and ReactWheelDB.upText) or (r == "{down}" and ReactWheelDB.downText))
+	return o or ic.send
+end
 
 local function Face(b, r)
 	local ic = ICONS[r]
@@ -79,6 +84,25 @@ local function Select(i)
 	end
 end
 
+local function KeyBase(k)
+	if not k then return nil end
+	local _, _, base = string.find(k, "([^%-]+)$")
+	return string.upper(base or k)
+end
+
+local function IsWheelKey(k)
+	local k1, k2 = GetBindingKey("REACTWHEEL_SHOW")
+	k = KeyBase(k)
+	return k and (k == KeyBase(k1) or k == KeyBase(k2))
+end
+
+-- True when the wheel key is a mouse button (no keyboard key-up to listen for).
+local function BoundToMouse()
+	local k1, k2 = GetBindingKey("REACTWHEEL_SHOW")
+	local a, b = KeyBase(k1), KeyBase(k2)
+	return (a and string.find(a, "BUTTON")) or (b and string.find(b, "BUTTON"))
+end
+
 local function Build()
 	wheel = CreateFrame("Frame", "ReactWheelFrame", UIParent)
 	wheel:SetWidth(RADIUS * 2 + BTN)
@@ -121,6 +145,14 @@ local function Build()
 		buttons[i] = b
 	end
 
+	-- Release is detected on the frame itself: a key-up here counts as a real hardware
+	-- event, which the game requires for sending SAY/etc. (binding key-up does not).
+	wheel:EnableKeyboard(true)
+	if wheel.SetPropagateKeyboardInput then wheel:SetPropagateKeyboardInput(true) end
+	wheel:SetScript("OnKeyUp", function(f, k)
+		if IsWheelKey(k or arg1) then ReactWheel_Release() end
+	end)
+
 	wheel:SetScript("OnUpdate", function()
 		local cx, cy = wheel:GetCenter()
 		local s = wheel:GetEffectiveScale()
@@ -150,8 +182,9 @@ function ReactWheel_Open()
 	wheel:Show()
 end
 
-function ReactWheel_Release()
+function ReactWheel_Release(fromBinding)
 	if not wheel or not wheel:IsVisible() then return end
+	if fromBinding and not BoundToMouse() then return end -- keyboard keys are handled by OnKeyUp
 	wheel:Hide()
 	if selected then Send(Resolve(Reactions()[selected])) end
 end
@@ -192,6 +225,10 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 			Print("slot " .. n .. " = " .. text)
 			return
 		end
+	elseif cmd == "up" or cmd == "down" then
+		ReactWheelDB[cmd .. "Text"] = (rest ~= "" and rest) or nil
+		Print("thumbs " .. cmd .. " now sends: " .. Resolve(cmd == "up" and "{up}" or "{down}"))
+		return
 	elseif cmd == "reset" then
 		ReactWheelDB.reactions = nil
 		Reactions()
@@ -208,5 +245,6 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 	end
 	Print("Bind a key in Key Bindings > ReactWheel; hold, flick, release.")
 	Print("Slot text may be {up} or {down} for thumbs icons.")
+	Print("/rw up <text> / /rw down <text>  change what the thumbs send (empty = +1 / -1)")
 	Print("/rw set <1-8> <text>   /rw reset   /rw reply <auto|party|raid|say>")
 end
