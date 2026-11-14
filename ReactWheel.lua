@@ -134,9 +134,9 @@ local EVENTS = {
 	CHAT_MSG_WHISPER = "WHISPER", CHAT_MSG_PARTY = "PARTY", CHAT_MSG_RAID = "RAID",
 	CHAT_MSG_RAID_LEADER = "RAID", CHAT_MSG_GUILD = "GUILD", CHAT_MSG_OFFICER = "OFFICER",
 	CHAT_MSG_SAY = "SAY", CHAT_MSG_YELL = "YELL", CHAT_MSG_CHANNEL = "CHANNEL",
-	CHAT_MSG_BATTLEGROUND = "BATTLEGROUND",
+	CHAT_MSG_BATTLEGROUND = "BATTLEGROUND", CHAT_MSG_INSTANCE_CHAT = "INSTANCE_CHAT",
 }
-for ev in pairs(EVENTS) do tracker:RegisterEvent(ev) end
+for ev in pairs(EVENTS) do pcall(tracker.RegisterEvent, tracker, ev) end -- skip events this client lacks
 tracker:RegisterEvent("VARIABLES_LOADED")
 tracker:SetScript("OnEvent", function(self, e, a1, a2, a3, a4, a5, a6, a7, a8)
 	local ev = e or event
