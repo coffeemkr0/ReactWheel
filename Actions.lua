@@ -44,16 +44,16 @@ function RW.RunCommand(line)
 end
 
 -- Run the slot. cand is the chosen destination (nil for slots that need none).
-function RW.Execute(slot, cand, S)
+function RW.Execute(slot, cand, S, alreadySent)
 	S = S or RW.P().settings
 	if slot.command and slot.command ~= "" then
 		RW.RunCommand(RW.Expand(slot.command))
-	elseif cand then
+	elseif cand and not alreadySent then
 		local text = RW.Expand(slot.text or "")
 		if text ~= "" then
 			if cand.dest == "WHISPER" then
 				SendChatMessage(text, "WHISPER", nil, cand.target)
-			elseif cand.dest == "SAY" and S.sayMode ~= "direct" and ChatFrame_OpenChat then
+			elseif cand.dest == "SAY" and S.sayMode ~= "direct" and ChatFrame_OpenChat then -- "auto" falls back here (combat, Shift/Ctrl-click)
 				-- The game blocks addons from sending /say directly ("Interface action failed"), so
 				-- put the line in the chat box; the player just presses Enter.
 				ChatFrame_OpenChat("/s " .. text)
