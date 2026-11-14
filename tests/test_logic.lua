@@ -1,6 +1,6 @@
 -- Run via tests/run_tests.py (Lua 5.1 through lupa). Run from the repo root.
 dofile("tests/wow_stubs.lua")
-for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel", "Editor", "Minimap", "Config" }) do
+for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel", "Editor", "Share", "Minimap", "Config" }) do
 	assert(loadfile(f .. ".lua"), f)()
 end
 local RW = ReactWheel
@@ -11,7 +11,7 @@ local function eq(a, b, name)
 	if a ~= b then fails = fails + 1; print("FAIL " .. name .. ": expected " .. tostring(b) .. " got " .. tostring(a)) end
 end
 
-local S = RW.Copy(RW.DEFAULT_SETTINGS)
+local S = RW.Copy(RW.DEFAULT_SETTINGS); S.minInterval = 0 -- spam guard has its own test
 local function env(o)
 	local e = { now = 1000, inRaid = false, inParty = false, inGuild = false }
 	for k, v in pairs(o or {}) do e[k] = v end
@@ -180,6 +180,50 @@ eq(RW.MoveRule(1, -1), false, "rule can't move above top")
 -- settings window / minimap smoke
 RW.ShowConfig(); RW.UpdateMinimap()
 _COMBAT = true; RW.ShowConfig(); _COMBAT = false
+
+-- spam guard
+local SG = RW.Copy(S); SG.minInterval = 1; RW.lastExec = nil; _SENT = {}; _NOW = 2000
+RW.Execute({ text = "a" }, { dest = "PARTY" }, SG); _NOW = 2000.5
+eq(RW.Execute({ text = "b" }, { dest = "PARTY" }, SG), false, "second send inside the interval ignored")
+_NOW = 2002; RW.Execute({ text = "c" }, { dest = "PARTY" }, SG)
+eq(#_SENT, 2, "spam guard let two through"); RW.lastExec = nil
+
+-- welcome
+ReactWheelDB.welcomed = nil
+eq(RW.NeedsWelcome(true), false, "no welcome when a key is bound"); eq(ReactWheelDB.welcomed, true, "flag set")
+ReactWheelDB.welcomed = nil; eq(RW.NeedsWelcome(false), true, "welcome when unbound")
+eq(RW.NeedsWelcome(false), false, "welcome only once")
+
+-- share: round trip
+local q = RW.P().wheels.quick
+q.items[3].opensWheel = "social"
+local str1 = RW.ExportWheels({ "quick" })
+eq(string.sub(str1, 1, 4), "RW1:", "export prefix"); eq(string.find(str1, "%s"), nil, "export has no whitespace")
+local pv = RW.PreviewImport(str1)
+eq(#pv.wheels, 1, "one wheel previewed"); eq(pv.wheels[1].name, "Quick Chat", "name survives"); eq(pv.wheels[1].slots, 8, "slots survive")
+eq(pv.wheels[1].items[1].text, q.items[1].text, "text survives (unicode)"); eq(pv.wheels[1].items[3].opensWheel, nil, "sub-wheel link stripped")
+eq(pv.wheels[1].items[1].color[2], 1, "colour survives"); eq(pv.wheels[1].items[1].emote, "NOD", "emote survives")
+local before = #RW.P().order
+local ids = RW.CommitImport(pv); eq(#RW.P().order, before + 1, "import added a wheel"); eq(RW.P().wheels[ids[1]].items[2].emote, "NO", "imported slot content")
+RW.DeleteWheel(ids[1]); q.items[3].opensWheel = nil
+eq(#RW.PreviewImport(RW.ExportWheels()).wheels, #RW.P().order, "export all round trips")
+-- share: hostile / malformed input
+local function bad(s, why) local r = RW.PreviewImport(s); eq(r, nil, why) end
+bad("", "empty"); bad("hello", "no prefix"); bad("RW1:", "empty payload"); bad("RW1:{", "unterminated"); bad("RW1:szz;", "bad hex")
+bad("RW1:" .. string.rep("{", 50) .. string.rep("}", 50), "too deep"); bad(string.rep("x", 70000), "too long")
+bad(RW.Serialize({ wheels = { { name = string.rep("A", 1000) } } }), "oversized string rejected"); bad("RW1:n1.0000;", "not a table"); bad(RW.Serialize({ v = 1 }), "no wheels")
+local evil = RW.Serialize({ wheels = { { name = "x\ncontrol", slots = 99999, dest = "CHANNEL", items = {
+	{ text = string.rep("A", 300), command = "no slash", icon = "Interface\\..\\x", emote = "BAD EMOTE!", emoteWhen = "sometimes",
+	  color = { 9, -4, "z" }, opensWheel = "quick", __index = "x" },
+	{ command = "/dance", icon = "INV_Misc_Note_01", color = { 2, 0.5, 0.25 } } } } } })
+local ev = RW.PreviewImport(evil); local w1 = ev.wheels[1]
+eq(w1.slots, 12, "slot count clamped"); eq(w1.dest, nil, "bad dest dropped"); eq(string.find(w1.name, "%c"), nil, "control chars stripped")
+eq(string.len(w1.items[1].text), 250, "text capped"); eq(w1.items[1].command, nil, "non-slash command dropped")
+eq(w1.items[1].icon, nil, "path traversal icon dropped"); eq(w1.items[1].emote, nil, "bad emote dropped")
+eq(w1.items[1].emoteWhen, nil, "bad emoteWhen dropped"); eq(w1.items[1].color, nil, "bad colour dropped")
+eq(w1.items[1].opensWheel, nil, "link dropped"); eq(w1.items[1].__index, nil, "unknown key dropped")
+eq(w1.items[2].command, "/dance", "good command kept"); eq(w1.items[2].icon, "INV_Misc_Note_01", "icon name kept"); eq(w1.items[2].color[1], 1, "colour clamped")
+eq(#ev.commands, 1, "commands listed for confirmation"); eq(#w1.items, 12, "items filled to slot count")
 
 -- UI smoke test (stubbed frames): open, page, close, activate
 RW.OpenWheel()

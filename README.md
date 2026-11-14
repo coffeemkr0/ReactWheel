@@ -16,8 +16,10 @@ Starter wheels: **Quick Chat**, **Dungeon / Raid**, **Social / Guild**, **Emotes
 
 ## Customizing
 - **Minimap button:** left-click opens the settings window, right-click lists your wheels, drag to move it.
-- **Settings window** (`/rw config`): Wheels (add, copy, delete, reorder, rename, 4-12 slots, edit any slot), Display (sizes, open mode, per-character wheels), Targeting (smart reply rules and timings), Emotes.
+- **Settings window** (`/rw config`): Wheels (add, copy, delete, reorder, rename, 4-12 slots, edit any slot), Display (sizes, open mode, per-character wheels), Targeting (smart reply rules and timings), Emotes, Share (export / import wheels as text).
 - **Right-click a slice** to edit that slot: label, text, emote, slash command, destination, icon, colour, or make it open another wheel.
+
+**Sharing:** Settings > Share exports a wheel as text you can paste to a friend; importing validates everything and asks you to confirm before accepting any slash commands.
 
 ## Where does it send?
 By default reactions use *smart reply*:

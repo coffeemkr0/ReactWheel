@@ -211,6 +211,7 @@ local function BuildDisplayTab(t)
 	Slider(t, "Centre controls", 20, -120, 0.8, 2.5, 0.1, function() return S().hubScale end, function(v) S().hubScale = v end, "%.1f")
 	Slider(t, "Minimum ring radius", 20, -160, 70, 200, 1, function() return S().radius end, function(v) S().radius = v end)
 	Slider(t, "Whole wheel scale", 20, -200, 0.6, 2, 0.05, function() return S().scale end, function(v) S().scale = v end, "%.2f")
+	Slider(t, "Pause between reactions (s)", 20, -240, 0, 3, 0.1, function() return S().minInterval end, function(v) S().minInterval = v end, "%.1f")
 
 	Text(t, "Behaviour", 250, -8)
 	Cycle(t, "Opening", 250, -34, { { "toggle", "Press to open / close" }, { "hold", "Hold to show" } },
@@ -333,6 +334,60 @@ local function BuildEmotesTab(t)
 end
 
 ---------------------------------------------------------------------------
+-- Share tab (import / export)
+---------------------------------------------------------------------------
+local pendingImport
+
+local function BuildShareTab(t)
+	Text(t, "Share wheels", 10, -8)
+	local info = Text(t, "Export gives you text to paste to a friend (or another character). To import, paste it into the box and press Import.", 20, -32, "GameFontHighlightSmall")
+	info:SetWidth(450)
+	frame.shareBox = CreateFrame("EditBox", nil, t, "InputBoxTemplate")
+	frame.shareBox:SetWidth(440)
+	frame.shareBox:SetHeight(24)
+	frame.shareBox:SetPoint("TOPLEFT", t, "TOPLEFT", 20, -80)
+	frame.shareBox:SetAutoFocus(false)
+	frame.shareBox:SetMaxLetters(0)
+	frame.shareBox:SetScript("OnEscapePressed", function() frame.shareBox:ClearFocus() end)
+	frame.shareBox:SetScript("OnTextChanged", function() pendingImport = nil end)
+	frame.shareStatus = Text(t, "", 20, -160, "GameFontHighlightSmall")
+	frame.shareStatus:SetWidth(450)
+	local function status(msg) frame.shareStatus:SetText(msg or "") end
+
+	Button(t, "Export this wheel", 20, -112, 130, function()
+		local _, id = Selected()
+		frame.shareBox:SetText(RW.ExportWheels({ id }))
+		frame.shareBox:HighlightText()
+		frame.shareBox:SetFocus()
+		status("Selected wheel exported. Press Ctrl+C to copy it.")
+	end)
+	Button(t, "Export all wheels", 156, -112, 130, function()
+		frame.shareBox:SetText(RW.ExportWheels())
+		frame.shareBox:HighlightText()
+		frame.shareBox:SetFocus()
+		status("All wheels exported. Press Ctrl+C to copy it.")
+	end)
+	Button(t, "Import", 292, -112, 80, function()
+		local text = frame.shareBox:GetText()
+		local result, err = RW.PreviewImport(text)
+		if not result then status("|cffff6060" .. err .. "|r") pendingImport = nil return end
+		if #result.commands > 0 and pendingImport ~= text then
+			-- slash commands run as if you typed them: make the player look first
+			pendingImport = text
+			status("|cffffb030This import contains slash commands that run when you click them:|r\n" ..
+				table.concat(result.commands, "\n", 1, math.min(#result.commands, 6)) ..
+				"\nPress Import again to accept.")
+			return
+		end
+		local ids = RW.CommitImport(result)
+		pendingImport = nil
+		selected = ids[1]
+		RefreshAll()
+		status("|cff60ff60Imported " .. #ids .. " wheel(s).|r")
+	end)
+end
+
+---------------------------------------------------------------------------
 -- frame and tabs
 ---------------------------------------------------------------------------
 local function SelectTab(i)
@@ -376,13 +431,13 @@ local function Build()
 	frame:Hide()
 	tinsert(UISpecialFrames, "ReactWheelConfig")
 
-	local names = { "Wheels", "Display", "Targeting", "Emotes" }
-	local builders = { BuildWheelsTab, BuildDisplayTab, BuildTargetingTab, BuildEmotesTab }
+	local names = { "Wheels", "Display", "Targeting", "Emotes", "Share" }
+	local builders = { BuildWheelsTab, BuildDisplayTab, BuildTargetingTab, BuildEmotesTab, BuildShareTab }
 	for i, n in ipairs(names) do
 		local b = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-		b:SetWidth(100)
+		b:SetWidth(92)
 		b:SetHeight(24)
-		b:SetPoint("TOPLEFT", frame, "TOPLEFT", 14 + (i - 1) * 104, -40)
+		b:SetPoint("TOPLEFT", frame, "TOPLEFT", 14 + (i - 1) * 96, -40)
 		b:SetText(n)
 		b:SetScript("OnClick", function() SelectTab(i) end)
 		tabButtons[i] = b
@@ -409,3 +464,41 @@ function RW.ShowConfig()
 	frame:Show()
 	LiveText()
 end
+
+---------------------------------------------------------------------------
+-- First-run welcome
+---------------------------------------------------------------------------
+local welcome
+local function ShowWelcome()
+	welcome = CreateFrame("Frame", "ReactWheelWelcome", UIParent)
+	welcome:SetWidth(340)
+	welcome:SetHeight(150)
+	welcome:SetFrameStrata("DIALOG")
+	welcome:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+	welcome.bg = welcome:CreateTexture(nil, "BACKGROUND")
+	welcome.bg:SetAllPoints(welcome)
+	welcome.bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+	welcome.bg:SetVertexColor(0.05, 0.05, 0.09, 0.97)
+	Text(welcome, "Welcome to ReactWheel", 14, -12)
+	local msg = Text(welcome, "Pick a key to open the wheel, then left-click a reaction to send it. Right-click a reaction to change it.", 14, -38, "GameFontHighlightSmall")
+	msg:SetWidth(312)
+	Button(welcome, "Set key...", 14, -100, 100, function()
+		welcome:Hide()
+		pcall(function()
+			if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+			ShowUIPanel(KeyBindingFrame)
+		end)
+	end)
+	Button(welcome, "Settings", 120, -100, 100, function() welcome:Hide(); RW.ShowConfig() end)
+	Button(welcome, "Later", 226, -100, 100, function() welcome:Hide() end)
+	tinsert(UISpecialFrames, "ReactWheelWelcome")
+end
+
+local wf = CreateFrame("Frame")
+wf:RegisterEvent("PLAYER_LOGIN")
+wf:SetScript("OnEvent", function()
+	if ReactWheelDB and RW.NeedsWelcome(GetBindingKey("REACTWHEEL_SHOW") ~= nil) then
+		RW.Print("Welcome! Set a key under Key Bindings > ReactWheel (or /rw config).")
+		ShowWelcome()
+	end
+end)

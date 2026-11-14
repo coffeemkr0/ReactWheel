@@ -14,6 +14,7 @@ RW.DEFAULT_SETTINGS = {
 	fontScale = 1,            -- text size on the slice buttons (0.7-2.5)
 	hubScale = 1,             -- size of the centre controls and their text (0.8-2.5)
 	defaultDest = "AUTO",
+	minInterval = 0.5,        -- seconds between reactions (spam guard, 0 = off)
 	sayMode = "direct",       -- "direct" (send, falling back to the chat box if the game blocks it) or "prefill" (always use the chat box)
 	askMode = "low",          -- "low" (ask when unsure), "never", "always"
 	whisperWindow = 30,       -- seconds a whisper counts as "fresh"

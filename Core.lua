@@ -181,10 +181,20 @@ end
 frame:SetScript("OnEvent", RW.OnEvent)
 
 ---------------------------------------------------------------------------
+-- First-run welcome: shown once, only when the wheel has no key bound yet.
+---------------------------------------------------------------------------
+function RW.NeedsWelcome(hasBinding)
+	if ReactWheelDB.welcomed then return false end
+	ReactWheelDB.welcomed = true -- never nag twice, whatever the answer
+	return not hasBinding
+end
+
+---------------------------------------------------------------------------
 -- Slash commands
 ---------------------------------------------------------------------------
 local function Help()
-	RW.Print("Bind a key under Key Bindings > ReactWheel.")
+	RW.Print("Bind a key under Key Bindings > ReactWheel, then press it to open the wheel.")
+	RW.Print("Left-click a slice to send it, right-click to edit it, Esc to close. Scroll to change wheels.")
 	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw size | /rw debug | /rw reset")
 end
 

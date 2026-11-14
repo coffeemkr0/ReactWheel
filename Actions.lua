@@ -61,6 +61,10 @@ end
 -- Run the slot. cand is the chosen destination (nil for slots that need none).
 function RW.Execute(slot, cand, S)
 	S = S or RW.P().settings
+	-- spam guard: ignore a second reaction that arrives within minInterval of the last one
+	local now = GetTime()
+	if (S.minInterval or 0) > 0 and RW.lastExec and now - RW.lastExec < S.minInterval then return false end
+	RW.lastExec = now
 	if slot.command and slot.command ~= "" then
 		RW.RunCommand(RW.Expand(slot.command))
 	elseif cand then
