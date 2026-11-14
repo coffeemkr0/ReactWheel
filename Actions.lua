@@ -10,6 +10,17 @@ function RW.Sound(kind, S)
 	pcall(PlaySound, (SOUNDKIT and SOUNDKIT[SOUND_KITS[kind]]) or SOUND_NAMES[kind])
 end
 
+-- Blizzard rule (patch 8.2.5 / Classic 1.13.3+): /say and /yell sent by an addon need a hardware event in the
+-- outdoor world; inside instances and battlegrounds they don't. So in "auto" mode /say goes to the chat box
+-- outdoors (the player presses Enter) and is sent directly inside an instance.
+function RW.SayNeedsChatBox(S)
+	local mode = S.sayMode or "auto"
+	if mode == "prefill" then return true end
+	if mode == "direct" then return false end
+	local inInstance = IsInInstance and IsInInstance()
+	return not inInstance
+end
+
 -- Does the slot need a chat destination at all? (emote-only and command slots do not)
 function RW.NeedsDest(slot)
 	if slot.command and slot.command ~= "" then return false end
@@ -56,7 +67,6 @@ function RW.OnActionBlocked(addon, func)
 	local p = RW.pendingSend
 	if not p or addon ~= "ReactWheel" or not (func and string.find(func, "SendChatMessage", 1, true)) then return end
 	RW.pendingSend = nil
-	RW.sayUnlocked = false -- the lock is back; use the chat box until the player says something
 	local prefix = (p.dest == "SAY" and "/s ") or (p.dest == "PARTY" and "/p ") or (p.dest == "RAID" and "/raid ")
 		or (p.dest == "GUILD" and "/g ") or "/s "
 	if ChatFrame_OpenChat then ChatFrame_OpenChat(prefix .. p.text) end
@@ -80,18 +90,14 @@ function RW.Execute(slot, cand, S)
 		if text ~= "" then
 			if cand.dest == "WHISPER" then
 				SendChatMessage(text, "WHISPER", nil, cand.target)
-			elseif cand.dest == "SAY" and (S.sayMode == "prefill" or not RW.sayUnlocked) and ChatFrame_OpenChat then
-				-- The game refuses addon-sent /say until a /say has gone out this session, so type it into
-				-- the chat box; once the player presses Enter that unlocks direct sending (see Core.lua).
-				RW.lastPrefill = { text = text, time = GetTime() }
+			elseif cand.dest == "SAY" and RW.SayNeedsChatBox(S) and ChatFrame_OpenChat then
 				ChatFrame_OpenChat("/s " .. text)
-				if S.sayMode ~= "prefill" and not RW.sayHinted then
+				if S.sayMode == "auto" and not RW.sayHinted then
 					RW.sayHinted = true
-					RW.Print("Press Enter to send this /say. After that, /say reactions send directly.")
+					RW.Print("Outdoors the game only lets /say come from your own keypress, so press Enter to send it. (Inside dungeons, raids and battlegrounds it sends by itself.)")
 				end
 			else
-				-- The game sometimes refuses addon-sent chat (observed for /say until the player has
-				-- typed a message themselves). When it does, ADDON_ACTION_* fires synchronously and
+				-- If the game refuses anyway, ADDON_ACTION_* fires synchronously and
 				-- RW.OnActionBlocked puts the line in the chat box instead.
 				RW.pendingSend = { dest = cand.dest, text = text }
 				SendChatMessage(text, cand.dest)

@@ -2,9 +2,8 @@
 ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
-RW.DB_VERSION = 5
+RW.DB_VERSION = 6
 RW.debug = false
-RW.sayUnlocked = false -- becomes true once /say has gone out this session (see Actions.lua)
 
 function RW.Print(msg)
 	if DEFAULT_CHAT_FRAME then
@@ -154,9 +153,9 @@ function RW.InitDB()
 		db.profile = p
 	end
 	db.reactions, db.upText, db.downText = nil, nil, nil
-	if (db.ver or 0) < 5 then
-		-- v5: direct sending (with block fallback) is the default again
-		local function fix(p) if p and p.settings then p.settings.sayMode = "direct" end end
+	if (db.ver or 0) < 6 then
+		-- v6: "auto" decides by location (chat box outdoors, direct in instances) from the documented game rule
+		local function fix(p) if p and p.settings then p.settings.sayMode = "auto" end end
 		fix(db.profile); fix(ReactWheelCharDB.profile)
 	end
 	if not db.autoDefaults then
@@ -196,13 +195,6 @@ RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a1
 	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then RW.OnActionBlocked(a1, a2) return end
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
-	if event == "CHAT_MSG_SAY" and not RW.sayUnlocked then
-		-- the game accepts our /say once a /say has gone out this session; recognise ours by sender, by GUID,
-		-- or by the exact line we put in the chat box
-		local mine = RW.BaseName(a2) == UnitName("player") or (a12 and UnitGUID and a12 == UnitGUID("player"))
-		local pf = RW.lastPrefill
-		if mine or (pf and a1 == pf.text and GetTime() - pf.time < 300) then RW.sayUnlocked = true end
-	end
 	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer
 	RW.Targeting.Observe(kind, a2, GetTime(), RW.P().settings)
 end
@@ -223,7 +215,7 @@ end
 local function Help()
 	RW.Print("Bind a key under Key Bindings > ReactWheel, then press it to open the wheel.")
 	RW.Print("Left-click a slice to send it, right-click to edit it, Esc to close. Scroll to change wheels.")
-	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw size | /rw debug | /rw reset")
+	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <auto|direct|prefill> | /rw size | /rw debug | /rw reset")
 end
 
 function RW.OpenConfig()
@@ -267,7 +259,7 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		RW.Print("debug " .. (RW.debug and "on" or "off"))
 		if RW.debug then
 			local d = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, RW.P().settings)
-			RW.Print("direct /say unlocked: " .. tostring(RW.sayUnlocked))
+			RW.Print("/say goes to the chat box here: " .. tostring(RW.SayNeedsChatBox(RW.P().settings)))
 			RW.Print("would send to: " .. d.label .. " (" .. d.reason .. ", confidence " .. d.confidence .. ")")
 		end
 	elseif cmd == "size" then
@@ -287,11 +279,11 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		end
 	elseif cmd == "say" then
 		rest = string.lower(rest)
-		if rest == "direct" or rest == "prefill" then
+		if rest == "auto" or rest == "direct" or rest == "prefill" then
 			RW.P().settings.sayMode = rest
 			RW.Print("say mode: " .. rest)
 		else
-			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <prefill|direct>")
+			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <auto|direct|prefill>")
 		end
 	elseif cmd == "reset" then
 		if string.lower(rest) == "all" then

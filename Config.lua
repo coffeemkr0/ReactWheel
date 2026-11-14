@@ -310,7 +310,7 @@ local function BuildTargetingTab(t)
 	Check(t, "Keep replying to the last whisperer", 14, -190, function() return S().stickWhisper end, function(v) S().stickWhisper = v end)
 	Cycle(t, "When unsure", 14, -222, { { "low", "Ask me where" }, { "never", "Use best guess" }, { "always", "Always ask" } },
 		function() return S().askMode end, function(v) S().askMode = v end, 120)
-	Cycle(t, "/say sending", 14, -250, { { "direct", "Direct (chat box if blocked)" }, { "prefill", "Always chat box" } },
+	Cycle(t, "/say sending", 14, -250, { { "auto", "Auto (Enter outdoors)" }, { "direct", "Always direct" }, { "prefill", "Always chat box" } },
 		function() return S().sayMode end, function(v) S().sayMode = v end, 170)
 
 	Text(t, "Order of checks (first match wins)", 250, -8)

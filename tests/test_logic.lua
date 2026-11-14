@@ -100,12 +100,12 @@ S.emoteOnWhisper = false
 ReactWheelDB = { ver = 3, reactions = { "x" }, upText = "OK" }
 ReactWheelCharDB = nil
 RW.InitDB()
-eq(ReactWheelDB.ver, 5, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
+eq(ReactWheelDB.ver, 6, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
 eq(RW.P().wheels.quick.items[1].text, "OK", "upText carried over")
 eq(#RW.P().order, 4, "four wheels"); eq(RW.P().wheels.quick.slots, 8, "slots")
 eq(RW.P().wheels.quick.items[3].text, "\226\153\165", "heart text")
-ReactWheelDB.ver = 4; ReactWheelDB.profile.settings.sayMode = "prefill"; RW.InitDB()
-eq(ReactWheelDB.profile.settings.sayMode, "direct", "migrated to direct")
+ReactWheelDB.ver = 5; ReactWheelDB.profile.settings.sayMode = "direct"; RW.InitDB()
+eq(ReactWheelDB.profile.settings.sayMode, "auto", "migrated to auto")
 ReactWheelDB.profile.wheels.quick.auto = nil; ReactWheelDB.autoDefaults = nil; RW.InitDB()
 eq(ReactWheelDB.profile.wheels.quick.auto, "whisper", "auto hints backfilled")
 -- profiles
@@ -127,34 +127,29 @@ eq(#_SENT, 1, "sent"); eq(_SENT[1][2], "PARTY", "channel"); eq(_EMOTES[1], "CLAP
 RW.Execute({ text = "ty", emote = "THANK" }, { dest = "WHISPER", target = "Bob" }, S)
 eq(_SENT[2][3], "Bob", "whisper target"); eq(#_EMOTES, 1, "no emote on whisper")
 
-_SENT, _PREFILL = {}, {}
-RW.sayUnlocked = false
-RW.Execute({ text = "hi0" }, { dest = "SAY" }, S)
-eq(#_SENT, 0, "locked say not sent"); eq(_PREFILL[1], "/s hi0", "locked say goes to chat box")
-RW.Execute({ text = "ty", emote = "THANK" }, { dest = "PARTY" }, S); eq(#_SENT, 1, "other channels unaffected by say lock")
-_SENT, _PREFILL = {}, {}
-RW.sayUnlocked = true
-RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
-eq(#_SENT, 1, "say sent directly by default"); eq(#_PREFILL, 0, "no prefill when not blocked")
-RW.sayUnlocked = true
-RW.sayUnlocked = false; RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Other-Realm")
-eq(RW.sayUnlocked, false, "someone else's say does not unlock")
-RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Tester-Realm"); eq(RW.sayUnlocked, true, "own say unlocks by name")
-RW.sayUnlocked = false; RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Weird", nil, nil, nil, nil, nil, nil, nil, nil, nil, "Player-1")
-eq(RW.sayUnlocked, true, "own say unlocks by guid")
-RW.sayUnlocked = false; RW.lastPrefill = { text = "line", time = GetTime() }
-RW.OnEvent(nil, "CHAT_MSG_SAY", "line", "Unknown"); eq(RW.sayUnlocked, true, "prefilled line seen unlocks")
-RW.sayUnlocked = true
--- simulate the game blocking the send: SendChatMessage raises ADDON_ACTION_* synchronously
+-- /say rule: chat box outdoors, direct inside instances (auto mode)
+local inst = false
+IsInInstance = function() return inst end
+S.sayMode = "auto"; _SENT, _PREFILL = {}, {}
+RW.Execute({ text = "out" }, { dest = "SAY" }, S)
+eq(#_SENT, 0, "outdoors: not sent directly"); eq(_PREFILL[1], "/s out", "outdoors: goes to the chat box")
+RW.Execute({ text = "ty", emote = "THANK" }, { dest = "PARTY" }, S); eq(#_SENT, 1, "party unaffected outdoors")
+inst = true; _SENT, _PREFILL = {}, {}
+RW.Execute({ text = "in", emote = "WAVE" }, { dest = "SAY" }, S)
+eq(#_SENT, 1, "inside an instance: sent directly"); eq(_SENT[1][2], "SAY", "channel say"); eq(#_PREFILL, 0, "no chat box inside instance")
+inst = false; S.sayMode = "direct"; _SENT, _PREFILL = {}, {}
+RW.Execute({ text = "forced" }, { dest = "SAY" }, S); eq(#_SENT, 1, "direct mode always sends")
+S.sayMode = "prefill"; inst = true; RW.Execute({ text = "pf" }, { dest = "SAY" }, S); eq(_PREFILL[1], "/s pf", "prefill mode always uses the chat box")
+S.sayMode = "auto"; IsInInstance = nil
+eq(RW.SayNeedsChatBox(S), true, "no IsInInstance -> treat as outdoors")
+-- game blocked a send anyway: fall back to the chat box
+S.sayMode = "direct"; _PREFILL = {}
 local realSend = SendChatMessage
 SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
 RW.Execute({ text = "yo" }, { dest = "SAY" }, S)
 eq(_PREFILL[1], "/s yo", "blocked say falls back to chat box")
-eq(RW.sayUnlocked, false, "block re-locks say")
 RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 1, "other addons ignored")
-SendChatMessage = realSend
-RW.sayUnlocked = true; S.sayMode = "prefill"; RW.Execute({ text = "hi2" }, { dest = "SAY" }, S)
-eq(_PREFILL[2], "/s hi2", "prefill mode"); S.sayMode = "direct"
+SendChatMessage = realSend; S.sayMode = "auto"
 
 -- slot editor field conversion
 local sl = RW.SlotFromFields({ label = "  hi ", text = "yo %t", emote = "wave", emoteWhen = "always", command = "", dest = "PARTY",

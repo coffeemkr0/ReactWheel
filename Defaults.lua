@@ -17,7 +17,7 @@ RW.DEFAULT_SETTINGS = {
 	autoWheel = false,        -- open the wheel that suits the situation (see each wheel's "auto" field)
 	sounds = false,           -- hover tick and send confirmation sounds
 	minInterval = 0.5,        -- seconds between reactions (spam guard, 0 = off)
-	sayMode = "direct",       -- "direct" (send, falling back to the chat box if the game blocks it) or "prefill" (always use the chat box)
+	sayMode = "auto",         -- "auto" (chat box outdoors, direct inside instances), "direct", or "prefill"
 	askMode = "low",          -- "low" (ask when unsure), "never", "always"
 	whisperWindow = 30,       -- seconds a whisper counts as "fresh"
 	guildWindow = 20,
