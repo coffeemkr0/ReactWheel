@@ -1,5 +1,16 @@
 # ReactWheel
 
+[![Latest release](https://img.shields.io/github/v/release/coffeemkr0/ReactWheel?label=latest%20release&sort=semver)](https://github.com/coffeemkr0/ReactWheel/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/coffeemkr0/ReactWheel/total?label=downloads)](https://github.com/coffeemkr0/ReactWheel/releases)
+[![Tests](https://github.com/coffeemkr0/ReactWheel/actions/workflows/ci.yml/badge.svg)](https://github.com/coffeemkr0/ReactWheel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+| | |
+|---|---|
+| **Download** | [**Latest release**](https://github.com/coffeemkr0/ReactWheel/releases/latest) &middot; [All releases](https://github.com/coffeemkr0/ReactWheel/releases) |
+| **What changed** | [Changelog](CHANGELOG.md) |
+| **Need help?** | [User guide below](#quick-start) &middot; [Troubleshooting](#troubleshooting) &middot; [Report a problem](https://github.com/coffeemkr0/ReactWheel/issues) |
+
 **Reply to chat with one click.** Press a key, a wheel of quick reactions appears at your cursor, click one — and it goes to the right place (the person who whispered you, your party, your raid, your guild or `/say`) along with a matching emote. Think of the reactions in Microsoft Teams, for WoW.
 
 - A wheel of 4–12 reactions, as many wheels as you like (Quick Chat, Dungeon / Raid, Social / Guild and Emotes come ready-made)
@@ -27,7 +38,7 @@
 ---
 
 ## Install
-1. Download the latest **ReactWheel-x.y.z.zip** from the [Releases page](https://github.com/coffeemkr0/ReactWheel/releases) and unzip it. (Or clone this repository.)
+1. Download the latest **ReactWheel-x.y.z.zip** from the [latest release](https://github.com/coffeemkr0/ReactWheel/releases/latest) and unzip it. (Or clone this repository.)
 2. Copy the whole **`ReactWheel`** folder into your game's `Interface/AddOns/` folder (the folder name must be exactly `ReactWheel`, with `ReactWheel.toc` directly inside it).
 3. Start the game. New files such as images only load on a full restart, so don't rely on `/reload` for a first install or an update that adds files.
 
