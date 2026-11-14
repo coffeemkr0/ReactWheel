@@ -62,7 +62,11 @@ local function Destination()
 	return "SAY"
 end
 
+-- Reactions that also perform an emote (keyed by the text sent).
+local EMOTES = { ["thanks!"] = "THANK" }
+
 local function Send(text)
+	if EMOTES[text] and DoEmote then DoEmote(EMOTES[text]) end
 	local t, target = Destination()
 	if t == "WHISPER" then
 		SendChatMessage(text, "WHISPER", nil, target)
