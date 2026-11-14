@@ -123,6 +123,12 @@ eq(#_SENT, 1, "sent"); eq(_SENT[1][2], "PARTY", "channel"); eq(_EMOTES[1], "CLAP
 RW.Execute({ text = "ty", emote = "THANK" }, { dest = "WHISPER", target = "Bob" }, S)
 eq(_SENT[2][3], "Bob", "whisper target"); eq(#_EMOTES, 1, "no emote on whisper")
 
+_SENT, _PREFILL = {}, {}
+RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
+eq(#_SENT, 0, "say not sent directly"); eq(_PREFILL[1], "/s hi", "say prefilled")
+S.sayMode = "direct"; RW.Execute({ text = "hi" }, { dest = "SAY" }, S)
+eq(#_SENT, 1, "direct say"); S.sayMode = "prefill"
+
 -- UI smoke test (stubbed frames): open, page, close, activate
 RW.OpenWheel()
 RW.PageWheel(1); eq(RW.P().current, "dungeon", "paged forward")

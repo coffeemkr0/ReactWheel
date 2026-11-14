@@ -53,6 +53,10 @@ function RW.Execute(slot, cand, S)
 		if text ~= "" then
 			if cand.dest == "WHISPER" then
 				SendChatMessage(text, "WHISPER", nil, cand.target)
+			elseif cand.dest == "SAY" and S.sayMode ~= "direct" and ChatFrame_OpenChat then
+				-- The game blocks addons from sending /say directly ("Interface action failed"), so
+				-- put the line in the chat box; the player just presses Enter.
+				ChatFrame_OpenChat("/s " .. text)
 			else
 				SendChatMessage(text, cand.dest)
 			end

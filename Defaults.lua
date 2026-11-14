@@ -11,6 +11,7 @@ RW.DEFAULT_SETTINGS = {
 	scale = 1,
 	radius = 105,
 	defaultDest = "AUTO",
+	sayMode = "prefill",      -- "prefill" (type it in the chat box, press Enter) or "direct"
 	askMode = "low",          -- "low" (ask when unsure), "never", "always"
 	whisperWindow = 30,       -- seconds a whisper counts as "fresh"
 	guildWindow = 20,

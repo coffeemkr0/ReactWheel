@@ -110,7 +110,7 @@ end)
 ---------------------------------------------------------------------------
 local function Help()
 	RW.Print("Bind a key under Key Bindings > ReactWheel.")
-	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw debug | /rw reset")
+	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw debug | /rw reset")
 end
 
 function RW.OpenConfig()
@@ -155,6 +155,14 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		if RW.debug then
 			local d = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, RW.P().settings)
 			RW.Print("would send to: " .. d.label .. " (" .. d.reason .. ", confidence " .. d.confidence .. ")")
+		end
+	elseif cmd == "say" then
+		rest = string.lower(rest)
+		if rest == "direct" or rest == "prefill" then
+			RW.P().settings.sayMode = rest
+			RW.Print("say mode: " .. rest)
+		else
+			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <prefill|direct>")
 		end
 	elseif cmd == "reset" then
 		ReactWheelDB.profile = RW.NewProfile()

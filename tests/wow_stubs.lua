@@ -40,3 +40,6 @@ proxy = function() return setmetatable({}, mt) end
 function CreateFrame() return proxy() end
 UIParent = proxy()
 GameTooltip = proxy()
+
+_PREFILL = {}
+function ChatFrame_OpenChat(m) _PREFILL[#_PREFILL + 1] = m end
