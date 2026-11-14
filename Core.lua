@@ -196,6 +196,18 @@ function RW.InitDB()
 		fix(db.profile); fix(ReactWheelCharDB.profile)
 		db.socialRenamed = true
 	end
+	if not db.socialMyBad then
+		-- Social / Guild slice 7: "welcome" became "my bad"; only replace it if it is still the old default
+		local function fix(p)
+			local w = p and p.wheels and p.wheels.social
+			local s = w and w.items[7]
+			if s and s.label == "welcome" and s.text == "welcome!" and s.emote == "WELCOME" then
+				s.label, s.text, s.emote = "my bad", "my bad", "APOLOGIZE"
+			end
+		end
+		fix(db.profile); fix(ReactWheelCharDB.profile)
+		db.socialMyBad = true
+	end
 	db.ver = RW.DB_VERSION
 	Sanitize(db.profile)
 	if ReactWheelCharDB.profile then Sanitize(ReactWheelCharDB.profile) end

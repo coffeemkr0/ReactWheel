@@ -101,7 +101,7 @@ local function LayoutHub(hs)
 	wheel.destBtn:SetPoint("CENTER", wheel, "CENTER", 0, 6 * hs)
 	wheel.pageText:ClearAllPoints()
 	wheel.pageText:SetPoint("CENTER", wheel, "CENTER", 0, -12 * hs)
-	for _, b in ipairs({ wheel.prev, wheel.next, wheel.close, wheel.edit }) do
+	for _, b in ipairs({ wheel.prev, wheel.next, wheel.close }) do
 		b:SetWidth(20 * hs)
 		b:SetHeight(18 * hs)
 		Font(b.t, 14 * hs)
@@ -112,8 +112,6 @@ local function LayoutHub(hs)
 	wheel.next:SetPoint("CENTER", wheel, "CENTER", 30 * hs, -12 * hs)
 	wheel.close:ClearAllPoints()
 	wheel.close:SetPoint("CENTER", wheel, "CENTER", 0, -31 * hs)
-	wheel.edit:ClearAllPoints()
-	wheel.edit:SetPoint("CENTER", wheel, "CENTER", -22 * hs, -33 * hs)
 	picker:SetScale(math.max(1, hs))
 end
 
@@ -126,7 +124,7 @@ local function UpdateHub()
 	wheel.close.t:SetText(#state.stack > 0 and "<" or "x")
 end
 
--- Edit mode: click one slot, then another, to swap them. Slots get an orange ring; the first pick turns green.
+-- Swap mode (armed from the right-click menu): the chosen slice turns green, the others orange.
 local function EditVisuals()
 	for i = 1, MAXSLOTS do
 		local f = slotFrames[i]
@@ -134,7 +132,6 @@ local function EditVisuals()
 		elseif state.edit then f.ring:SetVertexColor(1, 0.65, 0.1, 1)
 		else f.ring:SetVertexColor(0.4, 0.45, 0.55, 1) end
 	end
-	if wheel.edit then wheel.edit.t:SetTextColor(state.edit and 1 or 1, state.edit and 0.65 or 0.82, state.edit and 0.1 or 0) end
 end
 
 local function Render()
@@ -176,7 +173,7 @@ end
 
 local function RefreshDecision()
 	if state.edit then
-		wheel.dest:SetText("|cffffa020edit: " .. (state.swapFrom and "click where to move it" or "click a slot to move") .. "|r")
+		wheel.dest:SetText("|cffffa020swap: click where to move it|r")
 		return
 	end
 	local S = P().settings
@@ -245,24 +242,70 @@ function RW.CloseWheel()
 	if wheel and wheel:IsShown() then wheel:Hide() end
 end
 
+-- Right-click menu on a slice
+local slotMenu
+function RW.HideSlotMenu()
+	if slotMenu and slotMenu:IsShown() then slotMenu:Hide() return true end
+	return false
+end
+
+function RW.ShowSlotMenu(idx)
+	if RW.InCombat() then RW.Print("Editing is locked during combat.") return end
+	if not slotMenu then
+		slotMenu = CreateFrame("Frame", "ReactWheelSlotMenu", UIParent)
+		slotMenu:SetFrameStrata("FULLSCREEN_DIALOG")
+		slotMenu:SetWidth(190)
+		slotMenu:SetHeight(58)
+		slotMenu.bg = slotMenu:CreateTexture(nil, "BACKGROUND")
+		slotMenu.bg:SetAllPoints(slotMenu)
+		slotMenu.bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+		slotMenu.bg:SetVertexColor(0.05, 0.05, 0.09, 0.97)
+		slotMenu.items = {}
+		local function item(i, text, fn)
+			local b = CreateFrame("Button", nil, slotMenu)
+			b:SetWidth(190)
+			b:SetHeight(22)
+			b:SetPoint("TOPLEFT", slotMenu, "TOPLEFT", 0, -6 - (i - 1) * 22)
+			b.t = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			b.t:SetPoint("LEFT", b, "LEFT", 10, 0)
+			b.t:SetText(text)
+			b.hl = b:CreateTexture(nil, "HIGHLIGHT")
+			b.hl:SetAllPoints(b)
+			b.hl:SetTexture("Interface\\Buttons\\WHITE8X8")
+			b.hl:SetVertexColor(0.3, 0.5, 1, 0.3)
+			b:SetScript("OnClick", function() slotMenu:Hide(); fn(slotMenu.idx) end)
+			slotMenu.items[i] = b
+		end
+		item(1, "Slot settings...", function(i) RW.EditSlot(state.shown, i) end)
+		item(2, "Swap with another slot...", function(i) RW.BeginSwap(i) end)
+	end
+	slotMenu.idx = idx
+	slotMenu:ClearAllPoints()
+	local es = UIParent:GetEffectiveScale()
+	local x, y = GetCursorPosition()
+	slotMenu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / es + 6, y / es - 6)
+	slotMenu:Show()
+end
+
 function RW.Activate(idx, button, shift, ctrl)
 	local def = Def()
-	if state.edit and button ~= "RightButton" then
-		if not state.swapFrom then
-			state.swapFrom = idx
-		elseif state.swapFrom == idx then
-			state.swapFrom = nil
-		else
+	if state.edit then
+		-- a swap is armed: another slice completes it; the same slice or a right-click cancels
+		if button ~= "RightButton" and idx ~= state.swapFrom then
 			RW.SwapSlots(state.shown, state.swapFrom, idx)
-			state.swapFrom = nil
+			RW.CancelSwap()
 			Render()
+		else
+			RW.CancelSwap()
 		end
-		EditVisuals()
-		RefreshDecision()
 		return
 	end
 	local slot = def.items[idx]
-	if button == "RightButton" or RW.IsEmpty(slot) then
+	if button == "RightButton" then
+		RW.ShowSlotMenu(idx)
+		return
+	end
+	if RW.IsEmpty(slot) then
 		RW.EditSlot(state.shown, idx)
 		return
 	end
@@ -377,7 +420,7 @@ local function Build()
 	catcher:EnableMouse(true)
 	catcher:EnableMouseWheel(true)
 	catcher:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	catcher:SetScript("OnClick", function() RW.CloseWheel() end)
+	catcher:SetScript("OnClick", function() if RW.HideSlotMenu() then return end RW.CloseWheel() end)
 	catcher:SetScript("OnMouseWheel", function(_, d) RW.PageWheel(d > 0 and -1 or 1) end)
 	catcher:Hide()
 
@@ -432,19 +475,6 @@ local function Build()
 	wheel.next:SetScript("OnClick", function() RW.PageWheel(1) end)
 	wheel.pageText = wheel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	wheel.pageText:SetPoint("CENTER", wheel, "CENTER", 0, -12)
-	wheel.edit = MiniButton(wheel, "E", 18, 16)
-	wheel.edit:SetScript("OnClick", function()
-		RW.SetEditMode(not state.edit)
-	end)
-	wheel.edit:SetScript("OnEnter", function()
-		wheel.edit.t:SetTextColor(1, 1, 1)
-		GameTooltip:SetOwner(wheel.edit, "ANCHOR_BOTTOM")
-		GameTooltip:AddLine("Edit mode", 1, 0.82, 0)
-		GameTooltip:AddLine("Click a slot, then another slot, to swap them.", 1, 1, 1)
-		GameTooltip:AddLine("Right-click a slot to change what it does.", 0.6, 0.6, 0.6)
-		GameTooltip:Show()
-	end)
-	wheel.edit:SetScript("OnLeave", function() GameTooltip:Hide(); EditVisuals() end)
 	wheel.close = MiniButton(wheel, "x", 18, 16)
 	wheel.close:SetPoint("CENTER", wheel, "CENTER", 0, -31)
 	wheel.close:SetScript("OnClick", function()
@@ -509,7 +539,9 @@ local function Build()
 	end)
 
 	wheel:SetScript("OnMouseUp", function(_, button)
+		if RW.HideSlotMenu() then return end -- the click only dismisses the menu
 		if state.picking then HidePicker() return end
+		if state.edit and not state.hover then RW.CancelSwap() return end
 		if state.hover then
 			RW.Activate(state.hover, button, IsShiftKeyDown(), IsControlKeyDown())
 		elseif button == "RightButton" or not state.inHub then
@@ -522,12 +554,19 @@ local function Build()
 		HidePicker()
 		state.override, state.altIndex, state.stack = nil, 1, {}
 		state.edit, state.swapFrom = false, nil
+		RW.HideSlotMenu()
 	end)
 end
 
-function RW.SetEditMode(on)
-	if on and RW.InCombat() then RW.Print("Editing is locked during combat.") return end
-	state.edit = on and true or false
+function RW.BeginSwap(idx)
+	if RW.InCombat() then RW.Print("Editing is locked during combat.") return end
+	state.edit = true
+	state.swapFrom = idx
+	if wheel then EditVisuals(); RefreshDecision() end
+end
+
+function RW.CancelSwap()
+	state.edit = false
 	state.swapFrom = nil
 	if wheel then EditVisuals(); RefreshDecision() end
 end

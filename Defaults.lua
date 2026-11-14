@@ -81,7 +81,7 @@ function RW.DefaultWheels()
 				slot("nice", "nice!", "CHEER"),
 				slot("lol", "lol", "LAUGH"),
 				slot("thanks!", "thanks!", "THANK"),
-				slot("welcome", "welcome!", "WELCOME"),
+				slot("my bad", "my bad", "APOLOGIZE"),
 				slot(HEART, HEART, "LOVE", { color = { 1, 0.4, 0.5 } }),
 			},
 		},

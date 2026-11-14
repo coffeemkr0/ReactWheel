@@ -45,8 +45,7 @@ That's all you need. Everything else below is optional.
 | Send a reaction | **Left-click** a slice |
 | Close without sending | Press `Esc`, press your key again, click outside the wheel, or click the **x** in the middle |
 | Switch to another wheel | **Scroll the mouse wheel**, or click the **<** and **>** arrows in the middle (the middle shows "1/4" etc.) |
-| Edit a reaction | **Right-click** the slice |
-| Rearrange reactions | Click the **E** button in the middle, then click one slice and another to swap them |
+| Edit or move a reaction | **Right-click** the slice for a small menu: **Slot settings...** (edit it) or **Swap with another slot...** (then click the slice to swap with; click the same slice or right-click to cancel) |
 | Open a sub-wheel | Slices set up as "opens another wheel" do so on click; the **<** button in the middle goes back |
 
 Tips:
@@ -80,7 +79,7 @@ All of the timings and the order of the checks can be changed in **Settings → 
 
 ## Customizing
 ### Edit a single reaction
-**Right-click a slice** (or click an empty `+` slice). You can set:
+**Right-click a slice** and choose **Slot settings...** (or just click an empty `+` slice). You can set:
 
 - **Label** – the text on the wheel
 - **Chat text** – what is sent. Tokens: `%t` = your target's name, `%p` = your name, `%z` = your zone
@@ -99,7 +98,7 @@ Use **Test** to try it out, **Clear** to empty the slice, **Save** when you're d
 |---|---|
 | **Quick Chat** | 👍 and 👎 icons (send `√` and `▼`), `♥`, LOL, GG, thanks!, omw, what? |
 | **Dungeon / Raid** | ready, wait, pull!, rez?, oom, heal?, sorry, nice |
-| **Social / Guild** | grats!, hi, bye, nice, lol, thanks!, welcome, `♥` |
+| **Social / Guild** | grats!, hi, bye, nice, lol, thanks!, my bad, `♥` |
 | **Emotes** | dance, wave, cheer, bow, salute, flex, cry, laugh (emote only, no chat text) |
 
 Anything you edit is saved automatically. Use **Settings → Display → Reset everything** to go back to these.

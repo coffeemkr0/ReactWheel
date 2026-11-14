@@ -116,6 +116,12 @@ ReactWheelDB.socialRenamed = nil; RW.InitDB()
 eq(RW.P().wheels.social.items[1].text, "grats!", "old gz! migrated"); eq(RW.P().wheels.social.items[6].label, "thanks!", "old o7 migrated"); eq(RW.P().wheels.social.items[2].text, "yo", "custom slot untouched")
 ReactWheelDB.profile.wheels.social.items[1] = { label = "gz!", text = "my own gz" }
 ReactWheelDB.socialRenamed = nil; RW.InitDB(); eq(RW.P().wheels.social.items[1].text, "my own gz", "customised slot kept")
+eq(RW.P().wheels.social.items[7].text, "my bad", "default my bad"); eq(RW.P().wheels.social.items[7].emote, "APOLOGIZE", "apologize emote")
+ReactWheelDB.profile.wheels.social.items[7] = { label = "welcome", text = "welcome!", emote = "WELCOME" }
+ReactWheelDB.socialMyBad = nil; RW.InitDB()
+eq(RW.P().wheels.social.items[7].label, "my bad", "old welcome migrated"); eq(RW.P().wheels.social.items[7].emote, "APOLOGIZE", "migrated emote")
+ReactWheelDB.profile.wheels.social.items[7] = { label = "welcome", text = "welcome to my guild" }
+ReactWheelDB.socialMyBad = nil; RW.InitDB(); eq(RW.P().wheels.social.items[7].text, "welcome to my guild", "customised slot 7 kept")
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"
@@ -226,14 +232,20 @@ eq(RW.P().settings.buttonSize, 56, "settings reset"); eq(#RW.P().order, 4, "whee
 eq(ReactWheelCharDB.profile, nil, "character profile removed"); eq(ReactWheelCharDB.useChar, false, "back to account profile")
 SlashCmdList.REACTWHEEL("reset"); eq(RW.P().settings.buttonSize, 56, "plain /rw reset changes nothing")
 SlashCmdList.REACTWHEEL("reset all")
--- in-wheel edit mode: click one slot, then another, to swap
-RW.OpenWheel(); local q1, q2 = RW.P().wheels.quick.items[1], RW.P().wheels.quick.items[2]
-RW.SetEditMode(true); RW.Activate(1, "LeftButton"); RW.Activate(2, "LeftButton")
-eq(RW.P().wheels.quick.items[1], q2, "edit mode swapped slot 1"); eq(RW.P().wheels.quick.items[2], q1, "edit mode swapped slot 2")
-RW.Activate(3, "LeftButton"); RW.Activate(3, "LeftButton"); eq(#_SENT >= 0, true, "same slot twice cancels the pick")
-RW.SetEditMode(false); RW.SwapSlots("quick", 1, 2)
-_COMBAT = true; RW.SetEditMode(true); _COMBAT = false
-RW.SetEditMode(false); RW.CloseWheel()
+-- right-click menu and swap flow
+RW.OpenWheel(); local qw = RW.P().wheels.quick; local q1, q2 = qw.items[1], qw.items[2]
+RW.Activate(1, "RightButton")                         -- opens the menu (no editor yet)
+eq(RW.HideSlotMenu(), true, "right-click opened the menu"); eq(RW.HideSlotMenu(), false, "menu already closed")
+RW.BeginSwap(1); RW.Activate(2, "LeftButton")
+eq(qw.items[1], q2, "swap: slot 1 now has old slot 2"); eq(qw.items[2], q1, "swap: slot 2 now has old slot 1")
+RW.SwapSlots("quick", 1, 2)
+RW.BeginSwap(3); RW.Activate(3, "LeftButton"); RW.Activate(4, "LeftButton")      -- same slice cancels; swap is over, 4 is a normal click
+eq(qw.items[3].text ~= nil, true, "same slice cancels the swap and nothing moved")
+RW.BeginSwap(1); RW.Activate(2, "RightButton"); eq(qw.items[1], q1, "right-click cancels the swap")
+RW.CancelSwap()
+_COMBAT = true; RW.BeginSwap(1); RW.Activate(1, "RightButton"); _COMBAT = false
+eq(RW.HideSlotMenu(), false, "no menu in combat"); RW.Activate(2, "LeftButton")  -- swap was refused, so this is just a send
+RW.CloseWheel()
 -- context-aware wheel choice
 Tg.ctx = {}; local pp = RW.P(); local SA = RW.Copy(pp.settings)
 eq(Tg.PickWheel(env({}), Tg.ctx, SA, pp), "social", "solo -> solo wheel")
