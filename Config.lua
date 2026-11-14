@@ -309,9 +309,9 @@ local function BuildTargetingTab(t)
 	Slider(t, "/say counts for (s)", 20, -160, 5, 120, 1, function() return S().sayWindow end, function(v) S().sayWindow = v end)
 	Check(t, "Keep replying to the last whisperer", 14, -190, function() return S().stickWhisper end, function(v) S().stickWhisper = v end)
 	Cycle(t, "When unsure", 14, -222, { { "low", "Ask me where" }, { "never", "Use best guess" }, { "always", "Always ask" } },
-		function() return S().askMode end, function(v) S().askMode = v end, 120)
+		function() return S().askMode end, function(v) S().askMode = v end, 135, 85)
 	Cycle(t, "/say sending", 14, -250, { { "auto", "Send, else chat box" }, { "prefill", "Always chat box" } },
-		function() return S().sayMode end, function(v) S().sayMode = v end, 170)
+		function() return S().sayMode end, function(v) S().sayMode = v end, 135, 85)
 
 	Text(t, "Order of checks (first match wins)", 250, -8)
 	for i = 1, 6 do
@@ -346,8 +346,8 @@ local function BuildTargetingTab(t)
 		frame.ignore:SetText(table.concat(names, ", "))
 	end
 
-	frame.live = Text(t, "", 250, -244, "GameFontHighlightSmall")
-	frame.live:SetWidth(240)
+	frame.live = Text(t, "", 250, -248, "GameFontHighlightSmall")
+	frame.live:SetWidth(232)
 end
 
 ---------------------------------------------------------------------------
