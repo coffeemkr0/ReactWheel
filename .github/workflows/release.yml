@@ -19,6 +19,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Works whether the tag was pushed from the command line (no release yet: create it)
+          # or the release was made in the GitHub web UI (release exists: attach the zip to it).
+          for i in 1 2 3 4 5 6; do
+            if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+              gh release upload "${GITHUB_REF_NAME}" dist/*.zip --clobber
+              exit 0
+            fi
+            sleep 5
+          done
           gh release create "${GITHUB_REF_NAME}" dist/*.zip \
             --title "ReactWheel ${GITHUB_REF_NAME#v}" \
             --generate-notes
