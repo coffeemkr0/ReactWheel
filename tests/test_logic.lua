@@ -134,9 +134,14 @@ _SENT, _PREFILL = {}, {}
 RW.sayUnlocked = true
 RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
 eq(#_SENT, 1, "say sent directly by default"); eq(#_PREFILL, 0, "no prefill when not blocked")
-RW.sayUnlocked = false; RW.NoteOutgoing("x", "PARTY"); eq(RW.sayUnlocked, false, "party send does not unlock say")
-RW.NoteOutgoing("x", "SAY"); eq(RW.sayUnlocked, true, "typed say unlocks")
-RW.sayUnlocked = false; RW.pendingSend = { dest = "SAY" }; RW.NoteOutgoing("x", "SAY"); eq(RW.sayUnlocked, false, "own in-flight send ignored"); RW.pendingSend = nil
+RW.sayUnlocked = true
+RW.sayUnlocked = false; RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Other-Realm")
+eq(RW.sayUnlocked, false, "someone else's say does not unlock")
+RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Tester-Realm"); eq(RW.sayUnlocked, true, "own say unlocks by name")
+RW.sayUnlocked = false; RW.OnEvent(nil, "CHAT_MSG_SAY", "hello", "Weird", nil, nil, nil, nil, nil, nil, nil, nil, nil, "Player-1")
+eq(RW.sayUnlocked, true, "own say unlocks by guid")
+RW.sayUnlocked = false; RW.lastPrefill = { text = "line", time = GetTime() }
+RW.OnEvent(nil, "CHAT_MSG_SAY", "line", "Unknown"); eq(RW.sayUnlocked, true, "prefilled line seen unlocks")
 RW.sayUnlocked = true
 -- simulate the game blocking the send: SendChatMessage raises ADDON_ACTION_* synchronously
 local realSend = SendChatMessage

@@ -71,6 +71,7 @@ function RW.Execute(slot, cand, S)
 			elseif cand.dest == "SAY" and (S.sayMode == "prefill" or not RW.sayUnlocked) and ChatFrame_OpenChat then
 				-- The game refuses addon-sent /say until a /say has gone out this session, so type it into
 				-- the chat box; once the player presses Enter that unlocks direct sending (see Core.lua).
+				RW.lastPrefill = { text = text, time = GetTime() }
 				ChatFrame_OpenChat("/s " .. text)
 				if S.sayMode ~= "prefill" and not RW.sayHinted then
 					RW.sayHinted = true
