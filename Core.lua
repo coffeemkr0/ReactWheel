@@ -4,6 +4,7 @@ local RW = ReactWheel
 
 RW.DB_VERSION = 5
 RW.debug = false
+RW.sayUnlocked = false -- becomes true once /say has gone out this session (see Actions.lua)
 
 function RW.Print(msg)
 	if DEFAULT_CHAT_FRAME then
@@ -108,7 +109,10 @@ frame:SetScript("OnEvent", function(_, event, a1, a2)
 	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then RW.OnActionBlocked(a1, a2) return end
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
-	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer
+	if RW.BaseName(a2) == UnitName("player") then
+		if event == "CHAT_MSG_SAY" then RW.sayUnlocked = true end -- the game accepts our /say once the player has said something
+		return
+	end -- our own messages say nothing about who to answer
 	RW.Targeting.Observe(kind, a2, GetTime(), RW.P().settings)
 end)
 

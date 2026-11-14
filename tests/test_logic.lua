@@ -126,6 +126,12 @@ RW.Execute({ text = "ty", emote = "THANK" }, { dest = "WHISPER", target = "Bob" 
 eq(_SENT[2][3], "Bob", "whisper target"); eq(#_EMOTES, 1, "no emote on whisper")
 
 _SENT, _PREFILL = {}, {}
+RW.sayUnlocked = false
+RW.Execute({ text = "hi0" }, { dest = "SAY" }, S)
+eq(#_SENT, 0, "locked say not sent"); eq(_PREFILL[1], "/s hi0", "locked say goes to chat box")
+RW.Execute({ text = "ty", emote = "THANK" }, { dest = "PARTY" }, S); eq(#_SENT, 1, "other channels unaffected by say lock")
+_SENT, _PREFILL = {}, {}
+RW.sayUnlocked = true
 RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
 eq(#_SENT, 1, "say sent directly by default"); eq(#_PREFILL, 0, "no prefill when not blocked")
 -- simulate the game blocking the send: SendChatMessage raises ADDON_ACTION_* synchronously
@@ -133,9 +139,10 @@ local realSend = SendChatMessage
 SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
 RW.Execute({ text = "yo" }, { dest = "SAY" }, S)
 eq(_PREFILL[1], "/s yo", "blocked say falls back to chat box")
+eq(RW.sayUnlocked, false, "block re-locks say")
 RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 1, "other addons ignored")
 SendChatMessage = realSend
-S.sayMode = "prefill"; RW.Execute({ text = "hi2" }, { dest = "SAY" }, S)
+RW.sayUnlocked = true; S.sayMode = "prefill"; RW.Execute({ text = "hi2" }, { dest = "SAY" }, S)
 eq(_PREFILL[2], "/s hi2", "prefill mode"); S.sayMode = "direct"
 
 -- UI smoke test (stubbed frames): open, page, close, activate
