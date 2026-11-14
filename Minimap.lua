@@ -86,9 +86,12 @@ local function Build()
 	button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 
 	button:SetScript("OnClick", function(_, b)
+		-- releasing the mouse after a drag also counts as a click: ignore that one
+		if button.dragging or (button.lastDrag and GetTime() - button.lastDrag < 0.3) then return end
 		if b == "RightButton" then ShowMenu() else RW.OpenConfig() end
 	end)
 	button:SetScript("OnDragStart", function()
+		button.dragging = true
 		button:SetScript("OnUpdate", function()
 			local mx, my = Minimap:GetCenter()
 			local es = Minimap:GetEffectiveScale()
@@ -97,7 +100,11 @@ local function Build()
 			Place()
 		end)
 	end)
-	button:SetScript("OnDragStop", function() button:SetScript("OnUpdate", nil) end)
+	button:SetScript("OnDragStop", function()
+		button:SetScript("OnUpdate", nil)
+		button.dragging = false
+		button.lastDrag = GetTime()
+	end)
 	button:SetScript("OnEnter", function()
 		GameTooltip:SetOwner(button, "ANCHOR_LEFT")
 		GameTooltip:AddLine("ReactWheel", 1, 0.82, 0)
