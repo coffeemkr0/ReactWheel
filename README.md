@@ -31,7 +31,7 @@ Numbered chat channels (General, Trade...) are never used.
 Reactions also play an emote, but by default only when bystanders can see it (say / party / raid), not for whispers or guild.
 
 ## Commands
-`/rw config` · `/rw wheel <name or number>` · `/rw profile <account|char>` · `/rw debug` · `/rw reset`
+`/rw config` · `/rw wheel <name or number>` · `/rw profile <account|char>` · `/rw say <direct|prefill>` · `/rw debug` · `/rw reset`
 
 ## Development
 `tests/run_tests.py` runs the logic tests under Lua 5.1 (`pip install lupa`).

@@ -100,10 +100,12 @@ S.emoteOnWhisper = false
 ReactWheelDB = { ver = 3, reactions = { "x" }, upText = "OK" }
 ReactWheelCharDB = nil
 RW.InitDB()
-eq(ReactWheelDB.ver, 4, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
+eq(ReactWheelDB.ver, 5, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
 eq(RW.P().wheels.quick.items[1].text, "OK", "upText carried over")
 eq(#RW.P().order, 4, "four wheels"); eq(RW.P().wheels.quick.slots, 8, "slots")
 eq(RW.P().wheels.quick.items[3].text, "\226\153\165", "heart text")
+ReactWheelDB.ver = 4; ReactWheelDB.profile.settings.sayMode = "prefill"; RW.InitDB()
+eq(ReactWheelDB.profile.settings.sayMode, "direct", "migrated to direct")
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"
@@ -125,9 +127,16 @@ eq(_SENT[2][3], "Bob", "whisper target"); eq(#_EMOTES, 1, "no emote on whisper")
 
 _SENT, _PREFILL = {}, {}
 RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
-eq(#_SENT, 0, "say not sent directly"); eq(_PREFILL[1], "/s hi", "say prefilled")
-S.sayMode = "direct"; RW.Execute({ text = "hi" }, { dest = "SAY" }, S)
-eq(#_SENT, 1, "direct say"); S.sayMode = "prefill"
+eq(#_SENT, 1, "say sent directly by default"); eq(#_PREFILL, 0, "no prefill when not blocked")
+-- simulate the game blocking the send: SendChatMessage raises ADDON_ACTION_* synchronously
+local realSend = SendChatMessage
+SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
+RW.Execute({ text = "yo" }, { dest = "SAY" }, S)
+eq(_PREFILL[1], "/s yo", "blocked say falls back to chat box")
+RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 1, "other addons ignored")
+SendChatMessage = realSend
+S.sayMode = "prefill"; RW.Execute({ text = "hi2" }, { dest = "SAY" }, S)
+eq(_PREFILL[2], "/s hi2", "prefill mode"); S.sayMode = "direct"
 
 -- UI smoke test (stubbed frames): open, page, close, activate
 RW.OpenWheel()

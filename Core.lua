@@ -2,7 +2,7 @@
 ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
-RW.DB_VERSION = 4
+RW.DB_VERSION = 5
 RW.debug = false
 
 function RW.Print(msg)
@@ -76,6 +76,11 @@ function RW.InitDB()
 		db.profile = p
 	end
 	db.reactions, db.upText, db.downText = nil, nil, nil
+	if (db.ver or 0) < 5 then
+		-- v5: direct sending (with block fallback) is the default again
+		local function fix(p) if p and p.settings then p.settings.sayMode = "direct" end end
+		fix(db.profile); fix(ReactWheelCharDB.profile)
+	end
 	db.ver = RW.DB_VERSION
 	Sanitize(db.profile)
 	if ReactWheelCharDB.profile then Sanitize(ReactWheelCharDB.profile) end
@@ -96,9 +101,11 @@ local OBSERVED = {
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("VARIABLES_LOADED")
+for _, ev in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do pcall(frame.RegisterEvent, frame, ev) end
 for ev in pairs(OBSERVED) do pcall(frame.RegisterEvent, frame, ev) end -- skip events this client lacks
 frame:SetScript("OnEvent", function(_, event, a1, a2)
 	if event == "VARIABLES_LOADED" then RW.InitDB() return end
+	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then RW.OnActionBlocked(a1, a2) return end
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
 	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer

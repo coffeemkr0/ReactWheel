@@ -43,6 +43,20 @@ function RW.RunCommand(line)
 	eb:SetText(old or "")
 end
 
+-- The game blocked a chat send from us: hand the line to the player's chat box instead.
+function RW.OnActionBlocked(addon, func)
+	local p = RW.pendingSend
+	if not p or addon ~= "ReactWheel" or not (func and string.find(func, "SendChatMessage", 1, true)) then return end
+	RW.pendingSend = nil
+	local prefix = (p.dest == "SAY" and "/s ") or (p.dest == "PARTY" and "/p ") or (p.dest == "RAID" and "/raid ")
+		or (p.dest == "GUILD" and "/g ") or "/s "
+	if ChatFrame_OpenChat then ChatFrame_OpenChat(prefix .. p.text) end
+	if not RW.blockedHinted then
+		RW.blockedHinted = true
+		RW.Print("The game blocked that message - press Enter to send it. Typing any chat message yourself first usually lifts the block.")
+	end
+end
+
 -- Run the slot. cand is the chosen destination (nil for slots that need none).
 function RW.Execute(slot, cand, S)
 	S = S or RW.P().settings
@@ -53,12 +67,15 @@ function RW.Execute(slot, cand, S)
 		if text ~= "" then
 			if cand.dest == "WHISPER" then
 				SendChatMessage(text, "WHISPER", nil, cand.target)
-			elseif cand.dest == "SAY" and S.sayMode ~= "direct" and ChatFrame_OpenChat then
-				-- The game blocks addons from sending /say directly ("Interface action failed"), so
-				-- put the line in the chat box; the player just presses Enter.
+			elseif cand.dest == "SAY" and S.sayMode == "prefill" and ChatFrame_OpenChat then
 				ChatFrame_OpenChat("/s " .. text)
 			else
+				-- The game sometimes refuses addon-sent chat (observed for /say until the player has
+				-- typed a message themselves). When it does, ADDON_ACTION_* fires synchronously and
+				-- RW.OnActionBlocked puts the line in the chat box instead.
+				RW.pendingSend = { dest = cand.dest, text = text }
 				SendChatMessage(text, cand.dest)
+				RW.pendingSend = nil
 			end
 		end
 	end
