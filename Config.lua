@@ -237,13 +237,7 @@ local function BuildDisplayTab(t)
 			selected = nil
 			RefreshAll()
 		end, 165, 72)
-	Button(t, "Key bindings...", 250, -160, 130, function()
-		local ok = pcall(function()
-			if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-			ShowUIPanel(KeyBindingFrame)
-		end)
-		if not ok then RW.Print("Open Esc > Key Bindings and look for ReactWheel.") end
-	end)
+	Button(t, "Key bindings...", 250, -160, 130, function() RW.OpenKeyBindings() end)
 	local resetAll
 	resetAll = Button(t, "Reset everything", 250, -220, 130, function()
 		-- two clicks: the first arms the button, the second (within 5 s) does it
@@ -483,6 +477,10 @@ local function Build()
 	end)
 end
 
+function RW.HideConfig()
+	if frame and frame:IsShown() then frame:Hide() end
+end
+
 function RW.ShowConfig()
 	if RW.InCombat() then RW.Print("Settings are locked during combat.") return end
 	if not frame then Build() end
@@ -512,10 +510,7 @@ local function ShowWelcome()
 	msg:SetWidth(312)
 	Button(welcome, "Set key...", 14, -100, 100, function()
 		welcome:Hide()
-		pcall(function()
-			if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-			ShowUIPanel(KeyBindingFrame)
-		end)
+		RW.OpenKeyBindings()
 	end)
 	Button(welcome, "Settings", 120, -100, 100, function() welcome:Hide(); RW.ShowConfig() end)
 	Button(welcome, "Later", 226, -100, 100, function() welcome:Hide() end)

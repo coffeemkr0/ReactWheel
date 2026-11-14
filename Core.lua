@@ -264,6 +264,28 @@ local function Help()
 	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <auto|prefill> | /rw size | /rw debug | /rw reset")
 end
 
+-- Open the game's key bindings window. Clients differ (newer ones use the Settings panel, older ones
+-- KeyBindingFrame), so try each way in turn. Returns which one worked, or nil.
+function RW.OpenKeyBindings()
+	if RW.HideConfig then RW.HideConfig() end -- our window would sit on top of it
+	local function try(fn) return (pcall(fn)) end
+	if Settings and Settings.OpenToCategory and Settings.KEYBINDINGS_CATEGORY_ID then
+		if try(function() Settings.OpenToCategory(Settings.KEYBINDINGS_CATEGORY_ID) end) then return "settings" end
+	end
+	if KeyBindingFrame or KeyBindingFrame_LoadUI then
+		local ok = try(function()
+			if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+			ShowUIPanel(KeyBindingFrame)
+		end)
+		if ok and KeyBindingFrame then return "frame" end
+	end
+	if GameMenuButtonKeybindings and GameMenuButtonKeybindings.Click then
+		if try(function() GameMenuButtonKeybindings:Click() end) then return "menu" end
+	end
+	RW.Print("Press Esc > Options > Key Bindings > AddOns > ReactWheel.")
+	return nil
+end
+
 function RW.OpenConfig()
 	if RW.ShowConfig then RW.ShowConfig() else RW.Print("The settings window arrives in the next update.") end
 end

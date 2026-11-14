@@ -246,6 +246,22 @@ RW.CancelSwap()
 _COMBAT = true; RW.BeginSwap(1); RW.Activate(1, "RightButton"); _COMBAT = false
 eq(RW.HideSlotMenu(), false, "no menu in combat"); RW.Activate(2, "LeftButton")  -- swap was refused, so this is just a send
 RW.CloseWheel()
+-- key bindings window: try the new Settings panel, then the old frame, then the Esc-menu button, then explain
+local function nok() end
+local opened
+Settings = { KEYBINDINGS_CATEGORY_ID = 7, OpenToCategory = function(id) opened = "settings:" .. id end }
+eq(RW.OpenKeyBindings(), "settings", "new settings panel used first"); eq(opened, "settings:7", "keybindings category requested")
+Settings.OpenToCategory = function() error("nope") end
+KeyBindingFrame = {}; ShowUIPanel = function(f) opened = "frame" end
+eq(RW.OpenKeyBindings(), "frame", "falls back to the old key binding frame"); eq(opened, "frame", "old frame shown")
+Settings = nil; KeyBindingFrame = nil; KeyBindingFrame_LoadUI = function() KeyBindingFrame = {} end
+eq(RW.OpenKeyBindings(), "frame", "old frame is loaded on demand")
+KeyBindingFrame = nil; KeyBindingFrame_LoadUI = nil
+GameMenuButtonKeybindings = { Click = function() opened = "menu" end }
+eq(RW.OpenKeyBindings(), "menu", "falls back to the game menu button"); eq(opened, "menu", "menu button clicked")
+GameMenuButtonKeybindings = nil
+local before = #_PRINTED
+eq(RW.OpenKeyBindings(), nil, "nothing available"); eq(#_PRINTED, before + 1, "explains how to find key bindings")
 -- context-aware wheel choice
 Tg.ctx = {}; local pp = RW.P(); local SA = RW.Copy(pp.settings)
 eq(Tg.PickWheel(env({}), Tg.ctx, SA, pp), "social", "solo -> solo wheel")
