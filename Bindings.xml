@@ -1,5 +1,14 @@
 <Bindings>
 	<Binding name="REACTWHEEL_SHOW" header="REACTWHEEL" category="ADDONS" runOnUp="true">
-		if keystate == "down" then ReactWheel_Open() else ReactWheel_Release() end
+		if keystate == "down" then ReactWheel.BindingDown() else ReactWheel.BindingUp() end
+	</Binding>
+	<Binding name="REACTWHEEL_NEXT" category="ADDONS">
+		ReactWheel.PageWheel(1)
+	</Binding>
+	<Binding name="REACTWHEEL_PREV" category="ADDONS">
+		ReactWheel.PageWheel(-1)
+	</Binding>
+	<Binding name="REACTWHEEL_CONFIG" category="ADDONS">
+		ReactWheel.OpenConfig()
 	</Binding>
 </Bindings>
