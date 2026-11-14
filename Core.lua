@@ -2,7 +2,7 @@
 ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
-RW.DB_VERSION = 5
+RW.DB_VERSION = 4
 RW.debug = false
 
 function RW.Print(msg)
@@ -76,11 +76,6 @@ function RW.InitDB()
 		db.profile = p
 	end
 	db.reactions, db.upText, db.downText = nil, nil, nil
-	if (db.ver or 0) < 5 then
-		-- v5: /say is sent by a secure macro button ("auto"); drop the interim "prefill" default
-		local function fix(p) if p and p.settings and p.settings.sayMode == "prefill" then p.settings.sayMode = "auto" end end
-		fix(db.profile); fix(ReactWheelCharDB.profile)
-	end
 	db.ver = RW.DB_VERSION
 	Sanitize(db.profile)
 	if ReactWheelCharDB.profile then Sanitize(ReactWheelCharDB.profile) end
@@ -115,7 +110,7 @@ end)
 ---------------------------------------------------------------------------
 local function Help()
 	RW.Print("Bind a key under Key Bindings > ReactWheel.")
-	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <auto|prefill|direct> | /rw size | /rw debug | /rw reset")
+	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw size | /rw debug | /rw reset")
 end
 
 function RW.OpenConfig()
@@ -178,11 +173,11 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		end
 	elseif cmd == "say" then
 		rest = string.lower(rest)
-		if rest == "auto" or rest == "direct" or rest == "prefill" then
+		if rest == "direct" or rest == "prefill" then
 			RW.P().settings.sayMode = rest
 			RW.Print("say mode: " .. rest)
 		else
-			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <auto|prefill|direct>")
+			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <prefill|direct>")
 		end
 	elseif cmd == "reset" then
 		ReactWheelDB.profile = RW.NewProfile()

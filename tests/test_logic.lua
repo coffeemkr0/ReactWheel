@@ -100,12 +100,10 @@ S.emoteOnWhisper = false
 ReactWheelDB = { ver = 3, reactions = { "x" }, upText = "OK" }
 ReactWheelCharDB = nil
 RW.InitDB()
-eq(ReactWheelDB.ver, 5, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
+eq(ReactWheelDB.ver, 4, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
 eq(RW.P().wheels.quick.items[1].text, "OK", "upText carried over")
 eq(#RW.P().order, 4, "four wheels"); eq(RW.P().wheels.quick.slots, 8, "slots")
 eq(RW.P().wheels.quick.items[3].text, "\226\153\165", "heart text")
-ReactWheelDB.ver = 4; ReactWheelDB.profile.settings.sayMode = "prefill"; RW.InitDB()
-eq(ReactWheelDB.profile.settings.sayMode, "auto", "prefill migrated to auto")
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"

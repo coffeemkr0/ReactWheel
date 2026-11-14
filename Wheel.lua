@@ -122,8 +122,6 @@ local function UpdateHub()
 	wheel.close.t:SetText(#state.stack > 0 and "<" or "x")
 end
 
-local Prime -- defined below; arms the slice buttons that can send /say securely
-
 local function Render()
 	local def = Def()
 	local S = P().settings
@@ -140,30 +138,24 @@ local function Render()
 	wheel:SetWidth(size)
 	wheel:SetHeight(size)
 	local step = 2 * math.pi / state.n
-	-- slice buttons are secure (needed to send /say), so the game forbids moving or hiding
-	-- them in combat; in combat only their faces are updated
-	local safe = not RW.InCombat()
 	for i = 1, MAXSLOTS do
 		local f = slotFrames[i]
+		f:SetWidth(state.btn)
+		f:SetHeight(state.btn)
 		f.icon:SetWidth(state.btn - 14)
 		f.icon:SetHeight(state.btn - 14)
 		if i <= state.n then
-			if safe then
-				f:SetWidth(state.btn)
-				f:SetHeight(state.btn)
-				local a = (i - 1) * step -- clockwise from the top
-				f:ClearAllPoints()
-				f:SetPoint("CENTER", wheel, "CENTER", math.sin(a) * state.radius, math.cos(a) * state.radius)
-				f:Show()
-			end
+			local a = (i - 1) * step -- clockwise from the top
+			f:ClearAllPoints()
+			f:SetPoint("CENTER", wheel, "CENTER", math.sin(a) * state.radius, math.cos(a) * state.radius)
 			Face(f, def.items[i])
-		elseif safe then
+			f:Show()
+		else
 			f:Hide()
 		end
 	end
 	SetHover(nil)
 	UpdateHub()
-	Prime()
 end
 
 local function RefreshDecision()
@@ -173,7 +165,6 @@ local function RefreshDecision()
 	local shownCand, color = dec, (dec.confidence == "low") and "|cffffb030" or "|cff60ff60"
 	if state.override then shownCand, color = state.override, "|cff60c0ff" end
 	wheel.dest:SetText(color .. "-> " .. CandText(shownCand) .. "|r")
-	Prime()
 end
 
 ---------------------------------------------------------------------------
@@ -185,8 +176,6 @@ local function HidePicker()
 	if picker then picker:Hide() end
 end
 
-local function SayIsSecure() return (P().settings.sayMode or "auto") == "auto" end
-
 local function ShowPicker(slot, dec)
 	state.picking = true
 	state.pending = slot
@@ -196,17 +185,6 @@ local function ShowPicker(slot, dec)
 		if i <= n then
 			local c = dec.alternatives[i]
 			b.cand = c
-			if not RW.InCombat() then
-				local text = RW.Expand(slot.text or "")
-				if c.dest == "SAY" and SayIsSecure() and text ~= "" then
-					b:SetAttribute("type1", "macro")
-					b:SetAttribute("macrotext1", "/s " .. text)
-					b.secureSay = true
-				else
-					b:SetAttribute("type1", nil)
-					b.secureSay = false
-				end
-			end
 			b:SetText((i == 1 and "|cff60ff60" or "") .. CandText(c) .. (i == 1 and "|r" or ""))
 			b:Show()
 		else
@@ -219,7 +197,7 @@ local function ShowPicker(slot, dec)
 end
 
 -- Work out where this click should go: a candidate, or "ASK" plus the decision.
-local function ChooseDest(slot, shift, ctrl, quiet)
+local function ChooseDest(slot, shift, ctrl)
 	local p = P()
 	local S = p.settings
 	local env = RW.Targeting.Env()
@@ -231,52 +209,13 @@ local function ChooseDest(slot, shift, ctrl, quiet)
 	if fixed and fixed ~= "AUTO" then
 		local c = RW.Targeting.Fixed(fixed, env)
 		if c then return c end
-		if not quiet then RW.Print("'" .. fixed .. "' isn't available right now - using smart reply.") end
+		RW.Print("'" .. fixed .. "' isn't available right now - using smart reply.")
 	end
 	if state.override then return state.override end
 	if (S.askMode == "always" or (S.askMode == "low" and dec.confidence == "low")) and #dec.alternatives >= 2 then
 		return "ASK", dec
 	end
 	return dec
-end
-
--- Arm each slice button whose reaction would go to /say with a secure macro, so the click itself
--- sends it (addons may not call SendChatMessage for /say, but a secure macro button may).
--- Attributes can only change out of combat; the wheel clears them again when it closes.
-function Prime()
-	if RW.InCombat() or state.picking or not wheel then return end
-	local def = Def()
-	local S = P().settings
-	for i = 1, MAXSLOTS do
-		local f = slotFrames[i]
-		local slot = def.items[i]
-		local text, macro
-		if i <= state.n and slot and not RW.IsEmpty(slot) and not slot.opensWheel and RW.NeedsDest(slot) and SayIsSecure() then
-			local c = ChooseDest(slot, false, false, true)
-			if type(c) == "table" and c.dest == "SAY" then
-				text = RW.Expand(slot.text or "")
-				if text ~= "" then macro = "/s " .. text end
-			end
-		end
-		if macro ~= f.macro then
-			f:SetAttribute("type1", macro and "macro" or nil)
-			f:SetAttribute("macrotext1", macro)
-			f.macro = macro
-		end
-		f.secureSay = macro and true or false
-	end
-end
-
-local function Unprime()
-	if RW.InCombat() then return end
-	for i = 1, MAXSLOTS do
-		local f = slotFrames[i]
-		if f.macro then f:SetAttribute("type1", nil); f:SetAttribute("macrotext1", nil); f.macro = nil end
-		f.secureSay = false
-	end
-	if picker then
-		for i = 1, 5 do picker.buttons[i]:SetAttribute("type1", nil); picker.buttons[i].secureSay = false end
-	end
 end
 
 ---------------------------------------------------------------------------
@@ -379,16 +318,15 @@ local function BuildPicker()
 	picker.title:SetText("Send to:")
 	picker.buttons = {}
 	for i = 1, 5 do
-		local b = CreateFrame("Button", nil, picker, "UIPanelButtonTemplate,SecureActionButtonTemplate")
-		b:RegisterForClicks("LeftButtonUp")
+		local b = CreateFrame("Button", nil, picker, "UIPanelButtonTemplate")
 		b:SetWidth(150)
 		b:SetHeight(22)
 		b:SetPoint("TOP", picker, "TOP", 0, -26 - (i - 1) * 24)
-		b:SetScript("PostClick", function()
+		b:SetScript("OnClick", function()
 			local slot, c = state.pending, b.cand
 			HidePicker()
 			if slot and c then
-				RW.Execute(slot, c, nil, b.secureSay and true or false)
+				RW.Execute(slot, c)
 				RW.CloseWheel()
 			end
 		end)
@@ -473,20 +411,7 @@ local function Build()
 
 	-- slots
 	for i = 1, MAXSLOTS do
-		local f = CreateFrame("Button", nil, wheel, "SecureActionButtonTemplate")
-		f.index = i
-		f:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-		f:SetScript("PostClick", function(self, button)
-			local shift, ctrl = IsShiftKeyDown(), IsControlKeyDown()
-			if self.secureSay and button == "LeftButton" and not shift and not ctrl then
-				-- the secure macro has already sent the /say; finish up (emote, bookkeeping)
-				local slot = Def().items[self.index]
-				RW.Execute(slot, { dest = "SAY" }, nil, true)
-				RW.CloseWheel()
-			else
-				RW.Activate(self.index, button, shift, ctrl)
-			end
-		end)
+		local f = CreateFrame("Frame", nil, wheel)
 		f:SetWidth(56)
 		f:SetHeight(56)
 		f.bg = f:CreateTexture(nil, "BACKGROUND")
@@ -548,7 +473,6 @@ local function Build()
 	wheel:SetScript("OnHide", function()
 		catcher:Hide()
 		HidePicker()
-		Unprime()
 		state.override, state.altIndex, state.stack = nil, 1, {}
 	end)
 end
