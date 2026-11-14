@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.0.1
+- **Wheel memory:** with "switch wheel when my situation changes" on, the wheel now only switches when your situation actually changes (whisper, group, solo). Before, it jumped back to the situation's wheel on every open and forgot the one you had picked.
 - **Right-click menu:** right-clicking a slice now opens a small menu with **Slot settings...** (the slot editor) and **Swap with another slot...** (click the slice to swap with).
 - **Removed the "E" edit button** from the centre of the wheel; swapping now lives in the right-click menu.
 - **Social / Guild wheel:** `welcome` is now `my bad` (plays the apologize emote). Existing wheels are updated only if that slice was never changed.

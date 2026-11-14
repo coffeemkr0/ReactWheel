@@ -337,7 +337,7 @@ end
 
 function RW.PageWheel(delta)
 	local p = P()
-	if not (wheel and wheel:IsShown()) then RW.OpenWheel() end
+	if not (wheel and wheel:IsShown()) then RW.OpenWheel(p.current) end -- page from the wheel you used last
 	local pos = 1
 	for i, id in ipairs(p.order) do if id == state.shown then pos = i end end
 	local n = #p.order
@@ -579,7 +579,15 @@ function RW.OpenWheel(id)
 	if not wheel then Build() end
 	local p = P()
 	local S = p.settings
-	if not id and S.autoWheel then id = RW.Targeting.PickWheel(RW.Targeting.Env(), RW.Targeting.ctx, S, p) end
+	if not id and S.autoWheel then
+		-- switch only when the situation has changed since the last open, so a wheel you picked yourself sticks
+		local env = RW.Targeting.Env()
+		local key = RW.Targeting.SituationKey(env, RW.Targeting.ctx, S)
+		if key ~= RW.lastSituation then
+			RW.lastSituation = key
+			id = RW.Targeting.PickWheel(env, RW.Targeting.ctx, S, p)
+		end
+	end
 	id = id or p.current
 	if not p.wheels[id] then id = p.order[1] end
 	p.current = id

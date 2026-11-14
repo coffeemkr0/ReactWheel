@@ -129,7 +129,7 @@ Open it with `/rw config`, a click on the **minimap button**, or the "open setti
 
 **Make the wheel bigger:** if buttons or text are too small, raise *Button size*, *Text size* and *Centre controls* on the Display tab (or use `/rw size`). The ring grows to fit.
 
-**Switch wheel to suit the situation** (Display, off by default): the wheel key opens Quick Chat after a whisper, Dungeon / Raid when you're in a group, and Social / Guild when you're alone. Change which wheel does what on the Wheels tab ("Auto-opens").
+**Switch wheel when my situation changes** (Display, off by default): when you get a whisper, join a group or go solo, the next time you open the wheel it switches to Quick Chat, Dungeon / Raid or Social / Guild respectively. Otherwise it reopens the wheel you used last, so a wheel you picked yourself stays put. Change which wheel goes with which situation on the Wheels tab ("Auto-opens").
 
 **Shared or per-character:** wheels are shared by all your characters by default. Switch a character to its own copy under Display → "Wheels are".
 

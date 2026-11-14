@@ -62,11 +62,18 @@ end
 
 -- Which wheel suits the situation? Only used when the "switch wheel automatically" setting is on.
 -- Each wheel may carry auto = "whisper" | "party" | "solo" ("party" also covers raids). Returns an id or nil.
+-- The situation the player is in right now: "whisper" (a fresh whisper), "party" (grouped) or "solo".
+function Tg.SituationKey(env, ctx, S)
+	local w = ctx.whisper
+	if w and (env.now - w.time) <= S.whisperWindow then return "whisper" end
+	return env.inParty and "party" or "solo"
+end
+
 function Tg.PickWheel(env, ctx, S, p)
 	local keys = {}
-	local w = ctx.whisper
-	if w and (env.now - w.time) <= S.whisperWindow then keys[#keys + 1] = "whisper" end
-	if env.inParty then keys[#keys + 1] = "party" else keys[#keys + 1] = "solo" end
+	local key1 = Tg.SituationKey(env, ctx, S)
+	keys[1] = key1
+	if key1 == "whisper" then keys[2] = env.inParty and "party" or "solo" end
 	for _, key in ipairs(keys) do
 		for _, id in ipairs(p.order) do
 			if p.wheels[id] and p.wheels[id].auto == key then return id end

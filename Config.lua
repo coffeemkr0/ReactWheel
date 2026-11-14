@@ -220,7 +220,7 @@ local function BuildDisplayTab(t)
 		function() return S().openMode end, function(v) S().openMode = v end, 165, 72)
 	Cycle(t, "Appears", 250, -62, { { "cursor", "At the cursor" }, { "center", "Screen centre" } },
 		function() return S().openAt end, function(v) S().openAt = v end, 165, 72)
-	Check(t, "Switch wheel to suit the situation", 250, -246, function() return S().autoWheel end, function(v) S().autoWheel = v end)
+	Check(t, "Switch wheel when my situation changes", 250, -246, function() return S().autoWheel end, function(v) S().autoWheel = v end)
 	Check(t, "Play sounds", 250, -270, function() return S().sounds end, function(v) S().sounds = v end)
 	Check(t, "Show the minimap button", 250, -92,
 		function() return not ReactWheelDB.minimap.hide end,

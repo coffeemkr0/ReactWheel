@@ -272,7 +272,24 @@ eq(Tg.PickWheel(env({ inParty = true }), Tg.ctx, SA, pp), "quick", "fresh whispe
 Tg.ctx = {}; Tg.Observe("WHISPER", "Bob", 500, SA)
 eq(Tg.PickWheel(env({ inParty = true }), Tg.ctx, SA, pp), "dungeon", "old whisper ignored")
 pp.wheels.social.auto = nil; eq(Tg.PickWheel(env({}), Tg.ctx, SA, pp), nil, "no matching wheel -> nil"); pp.wheels.social.auto = "solo"
-RW.P().settings.autoWheel = true; RW.OpenWheel(); eq(RW.P().current, "social", "auto wheel applied on open"); RW.CloseWheel()
+-- situation keys and sticky auto-switching
+eq(Tg.SituationKey(env({}), {}, SA), "solo", "key solo"); eq(Tg.SituationKey(env({ inParty = true }), {}, SA), "party", "key party")
+eq(Tg.SituationKey(env({}), { whisper = { sender = "B", time = 990 } }, SA), "whisper", "key whisper")
+RW.P().settings.autoWheel = true; RW.lastSituation = nil; RW.P().current = "quick"
+RW.OpenWheel(); eq(RW.P().current, "social", "first open uses the wheel for the situation (solo)"); RW.CloseWheel()
+RW.PageWheel(1); RW.CloseWheel()                                     -- player moves to another wheel themselves
+local mine = RW.P().current
+RW.OpenWheel(); eq(RW.P().current, mine, "same situation keeps the wheel the player chose"); RW.CloseWheel()
+RW.OpenWheel(); eq(RW.P().current, mine, "...and again"); RW.CloseWheel()
+Tg.Observe("WHISPER", "Bob", GetTime(), SA)                          -- situation changes: a whisper arrives
+RW.OpenWheel(); eq(RW.P().current, "quick", "situation change switches once"); RW.CloseWheel()
+RW.PageWheel(1); RW.CloseWheel(); mine = RW.P().current
+RW.OpenWheel(); eq(RW.P().current, mine, "choice sticks after the switch"); RW.CloseWheel()
+RW.OpenWheel("emotes"); eq(RW.P().current, "emotes", "explicit open ignores auto"); RW.CloseWheel()
+RW.OpenWheel(); eq(RW.P().current, "emotes", "explicit choice is remembered"); RW.CloseWheel()
+RW.P().current = "dungeon"; RW.PageWheel(1); eq(RW.P().current, "social", "paging from closed starts at the remembered wheel"); RW.CloseWheel()
+RW.P().settings.autoWheel = false; RW.lastSituation = nil
+RW.P().current = "dungeon"; RW.OpenWheel(); eq(RW.P().current, "dungeon", "auto off: just reopens the last wheel"); RW.CloseWheel()
 RW.P().settings.autoWheel = false; RW.P().current = "quick"; Tg.ctx = {}
 -- sounds
 local played = 0; PlaySound = function() played = played + 1 end
