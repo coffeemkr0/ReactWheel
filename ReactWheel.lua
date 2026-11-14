@@ -2,7 +2,8 @@
 -- Written in Lua 5.0-compatible style (classic-era clients); also runs on newer clients.
 
 BINDING_HEADER_REACTWHEEL = "ReactWheel"
-BINDING_NAME_REACTWHEEL_SHOW = "Show reaction wheel (hold)"
+BINDING_NAME_REACTWHEEL_SHOW = "Reaction wheel (hold)"
+BINDING_NAME_HEADER_REACTWHEEL = "ReactWheel" -- some clients look the header up as a binding name
 
 local DEFAULTS = { "+1", "LOL", "GG", "thx!", "<3", "brb", "o7", "?!" }
 local RADIUS, DEADZONE, BTN = 110, 35, 64

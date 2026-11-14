@@ -1,5 +1,5 @@
 <Bindings>
-	<Binding name="REACTWHEEL_SHOW" header="REACTWHEEL" runOnUp="true">
+	<Binding name="REACTWHEEL_SHOW" header="REACTWHEEL" category="ADDONS" runOnUp="true">
 		if keystate == "down" then ReactWheel_Open() else ReactWheel_Release() end
 	</Binding>
 </Bindings>
