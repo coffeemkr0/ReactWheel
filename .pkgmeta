@@ -1,0 +1,8 @@
+package-as: ReactWheel
+
+ignore:
+  - tests
+  - scripts
+  - dist
+  - .github
+  - .gitattributes

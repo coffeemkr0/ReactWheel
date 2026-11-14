@@ -27,7 +27,7 @@
 ---
 
 ## Install
-1. Download or clone this repository.
+1. Download the latest **ReactWheel-x.y.z.zip** from the [Releases page](https://github.com/coffeemkr0/ReactWheel/releases) and unzip it. (Or clone this repository.)
 2. Copy the whole **`ReactWheel`** folder into your game's `Interface/AddOns/` folder (the folder name must be exactly `ReactWheel`, with `ReactWheel.toc` directly inside it).
 3. Start the game. New files such as images only load on a full restart, so don't rely on `/reload` for a first install or an update that adds files.
 
@@ -169,6 +169,8 @@ Most reactions play a matching emote (nod, laugh, clap, thank…). Emotes can on
 | Something looks wrong | Run `/rw debug`, and open an issue with what it prints |
 
 ## For developers
+**Release:** `scripts/package.sh` builds `dist/ReactWheel-<version>.zip` (addon files only). Pushing a tag like `v1.0.0` runs the tests and publishes that zip as a GitHub release automatically; every push also runs the tests (`.github/workflows`).
+
 Source layout:
 
 | File | Purpose |
