@@ -19,7 +19,7 @@ Copy the `ReactWheel` folder into `Interface/AddOns/`.
 - `/rw reply <auto|party|raid|guild|say|yell>` force the destination
 
 ## Compatibility
-Targets the 1.12-style API (`## Interface: 11200`) and is written in Lua 5.0-compatible style.
+Uses `## Interface: 16001` and is written in Lua 5.0-compatible style.
 If your client uses a different interface number, edit the `.toc`. Untested in-game — reports welcome.
 
 ## License

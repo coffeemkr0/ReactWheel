@@ -26,8 +26,8 @@ end
 -- Pick where the reaction goes: last incoming chat context, else group, else /say.
 local function Destination()
 	if reply then return reply.type, reply.target end
-	if GetNumRaidMembers and GetNumRaidMembers() > 0 then return "RAID" end
-	if GetNumPartyMembers and GetNumPartyMembers() > 0 then return "PARTY" end
+	if (GetNumRaidMembers and GetNumRaidMembers() > 0) or (IsInRaid and IsInRaid()) then return "RAID" end
+	if (GetNumPartyMembers and GetNumPartyMembers() > 0) or (IsInGroup and IsInGroup()) then return "PARTY" end
 	return "SAY"
 end
 
