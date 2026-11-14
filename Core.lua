@@ -115,6 +115,24 @@ function RW.SetSlotCount(id, n)
 	for i = 1, w.slots do w.items[i] = w.items[i] or {} end
 end
 
+function RW.SwapSlots(id, a, b)
+	local w = RW.P().wheels[id]
+	if not w or a == b or a < 1 or b < 1 or a > w.slots or b > w.slots then return false end
+	w.items[a] = w.items[a] or {}
+	w.items[b] = w.items[b] or {}
+	w.items[a], w.items[b] = w.items[b], w.items[a]
+	return true
+end
+
+-- Put everything back to factory state: all wheels and settings, this character's own copy, minimap position.
+function RW.ResetAll()
+	ReactWheelDB.profile = RW.NewProfile()
+	ReactWheelDB.minimap = { hide = false, angle = 215 }
+	ReactWheelCharDB.profile = nil
+	ReactWheelCharDB.useChar = false
+	RW.Targeting.ctx = {}
+end
+
 function RW.MoveRule(index, delta)
 	local r = RW.P().settings.rules
 	local j = index + delta
@@ -266,8 +284,13 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 			RW.Print("say mode is '" .. RW.P().settings.sayMode .. "'. /rw say <prefill|direct>")
 		end
 	elseif cmd == "reset" then
-		ReactWheelDB.profile = RW.NewProfile()
-		RW.Print("Account-wide wheels reset to defaults. /reload to refresh.")
+		if string.lower(rest) == "all" then
+			RW.ResetAll()
+			if RW.UpdateMinimap then RW.UpdateMinimap() end
+			RW.Print("Everything reset to defaults.")
+		else
+			RW.Print("This resets ALL wheels and settings. Type /rw reset all to confirm.")
+		end
 	else
 		Help()
 	end

@@ -240,6 +240,30 @@ local function BuildDisplayTab(t)
 		end)
 		if not ok then RW.Print("Open Esc > Key Bindings and look for ReactWheel.") end
 	end)
+	local resetAll
+	resetAll = Button(t, "Reset everything", 250, -220, 130, function()
+		-- two clicks: the first arms the button, the second (within 5 s) does it
+		if not resetAll.armed then
+			resetAll.armed = GetTime()
+			resetAll:SetText("Click again to confirm")
+			return
+		end
+		resetAll.armed = nil
+		resetAll:SetText("Reset everything")
+		RW.ResetAll()
+		RW.UpdateMinimap()
+		selected = nil
+		RefreshAll()
+		OnChanged()
+		RW.Print("Everything reset to defaults.")
+	end)
+	resetAll:SetWidth(150)
+	resetAll:SetScript("OnUpdate", function()
+		if resetAll.armed and GetTime() - resetAll.armed > 5 then
+			resetAll.armed = nil
+			resetAll:SetText("Reset everything")
+		end
+	end)
 	Button(t, "Reset wheels", 250, -190, 130, function()
 		RW.P().wheels, RW.P().order = RW.DefaultWheels()
 		RW.P().current = RW.P().order[1]

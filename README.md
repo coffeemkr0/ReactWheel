@@ -21,6 +21,10 @@ Starter wheels: **Quick Chat**, **Dungeon / Raid**, **Social / Guild**, **Emotes
 
 **Sharing:** Settings > Share exports a wheel as text you can paste to a friend; importing validates everything and asks you to confirm before accepting any slash commands.
 
+**Rearranging:** press the **E** button in the centre of the wheel for edit mode, then click a slot and click another to swap them. Right-click still edits a slot.
+
+**Starting over:** Settings > Display > Reset everything (or `/rw reset all`) restores every wheel and setting to the defaults.
+
 ## Where does it send?
 By default reactions use *smart reply*:
 1. a whisper received in the last 30 seconds -> reply to that whisper
@@ -38,7 +42,7 @@ Numbered chat channels (General, Trade...) are never used.
 Reactions also play an emote, but by default only when bystanders can see it (say / party / raid), not for whispers or guild.
 
 ## Commands
-`/rw config` · `/rw wheel <name or number>` · `/rw profile <account|char>` · `/rw say <direct|prefill>` · `/rw debug` · `/rw reset`
+`/rw config` · `/rw wheel <name or number>` · `/rw profile <account|char>` · `/rw say <direct|prefill>` · `/rw debug` · `/rw reset all`
 
 ## Development
 `tests/run_tests.py` runs the logic tests under Lua 5.1 (`pip install lupa`).

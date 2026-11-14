@@ -11,6 +11,7 @@ local state = {
 	shown = nil,    -- id of the wheel being displayed
 	stack = {},     -- ids to go back to after opening a sub-wheel
 	n = 8, radius = 105, btn = 56, hub = 48, fs = 1,
+	edit = false, swapFrom = nil,
 	hover = nil, inHub = false,
 	override = nil, -- destination pinned by clicking the hub
 	altIndex = 1,
@@ -99,7 +100,7 @@ local function LayoutHub(hs)
 	wheel.destBtn:SetPoint("CENTER", wheel, "CENTER", 0, 6 * hs)
 	wheel.pageText:ClearAllPoints()
 	wheel.pageText:SetPoint("CENTER", wheel, "CENTER", 0, -12 * hs)
-	for _, b in ipairs({ wheel.prev, wheel.next, wheel.close }) do
+	for _, b in ipairs({ wheel.prev, wheel.next, wheel.close, wheel.edit }) do
 		b:SetWidth(20 * hs)
 		b:SetHeight(18 * hs)
 		Font(b.t, 14 * hs)
@@ -110,6 +111,8 @@ local function LayoutHub(hs)
 	wheel.next:SetPoint("CENTER", wheel, "CENTER", 30 * hs, -12 * hs)
 	wheel.close:ClearAllPoints()
 	wheel.close:SetPoint("CENTER", wheel, "CENTER", 0, -31 * hs)
+	wheel.edit:ClearAllPoints()
+	wheel.edit:SetPoint("CENTER", wheel, "CENTER", -22 * hs, -33 * hs)
 	picker:SetScale(math.max(1, hs))
 end
 
@@ -120,6 +123,17 @@ local function UpdateHub()
 	wheel.pageText:SetText(pos .. "/" .. count)
 	if count > 1 then wheel.prev:Show(); wheel.next:Show() else wheel.prev:Hide(); wheel.next:Hide() end
 	wheel.close.t:SetText(#state.stack > 0 and "<" or "x")
+end
+
+-- Edit mode: click one slot, then another, to swap them. Slots get an orange ring; the first pick turns green.
+local function EditVisuals()
+	for i = 1, MAXSLOTS do
+		local f = slotFrames[i]
+		if state.edit and i == state.swapFrom then f.ring:SetVertexColor(0.3, 1, 0.3, 1)
+		elseif state.edit then f.ring:SetVertexColor(1, 0.65, 0.1, 1)
+		else f.ring:SetVertexColor(0.4, 0.45, 0.55, 1) end
+	end
+	if wheel.edit then wheel.edit.t:SetTextColor(state.edit and 1 or 1, state.edit and 0.65 or 0.82, state.edit and 0.1 or 0) end
 end
 
 local function Render()
@@ -156,9 +170,14 @@ local function Render()
 	end
 	SetHover(nil)
 	UpdateHub()
+	EditVisuals()
 end
 
 local function RefreshDecision()
+	if state.edit then
+		wheel.dest:SetText("|cffffa020edit: " .. (state.swapFrom and "click where to move it" or "click a slot to move") .. "|r")
+		return
+	end
 	local S = P().settings
 	local dec = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, S)
 	state.decision = dec
@@ -227,6 +246,20 @@ end
 
 function RW.Activate(idx, button, shift, ctrl)
 	local def = Def()
+	if state.edit and button ~= "RightButton" then
+		if not state.swapFrom then
+			state.swapFrom = idx
+		elseif state.swapFrom == idx then
+			state.swapFrom = nil
+		else
+			RW.SwapSlots(state.shown, state.swapFrom, idx)
+			state.swapFrom = nil
+			Render()
+		end
+		EditVisuals()
+		RefreshDecision()
+		return
+	end
 	local slot = def.items[idx]
 	if button == "RightButton" or RW.IsEmpty(slot) then
 		RW.EditSlot(state.shown, idx)
@@ -398,6 +431,19 @@ local function Build()
 	wheel.next:SetScript("OnClick", function() RW.PageWheel(1) end)
 	wheel.pageText = wheel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	wheel.pageText:SetPoint("CENTER", wheel, "CENTER", 0, -12)
+	wheel.edit = MiniButton(wheel, "E", 18, 16)
+	wheel.edit:SetScript("OnClick", function()
+		RW.SetEditMode(not state.edit)
+	end)
+	wheel.edit:SetScript("OnEnter", function()
+		wheel.edit.t:SetTextColor(1, 1, 1)
+		GameTooltip:SetOwner(wheel.edit, "ANCHOR_BOTTOM")
+		GameTooltip:AddLine("Edit mode", 1, 0.82, 0)
+		GameTooltip:AddLine("Click a slot, then another slot, to swap them.", 1, 1, 1)
+		GameTooltip:AddLine("Right-click a slot to change what it does.", 0.6, 0.6, 0.6)
+		GameTooltip:Show()
+	end)
+	wheel.edit:SetScript("OnLeave", function() GameTooltip:Hide(); EditVisuals() end)
 	wheel.close = MiniButton(wheel, "x", 18, 16)
 	wheel.close:SetPoint("CENTER", wheel, "CENTER", 0, -31)
 	wheel.close:SetScript("OnClick", function()
@@ -474,7 +520,15 @@ local function Build()
 		catcher:Hide()
 		HidePicker()
 		state.override, state.altIndex, state.stack = nil, 1, {}
+		state.edit, state.swapFrom = false, nil
 	end)
+end
+
+function RW.SetEditMode(on)
+	if on and RW.InCombat() then RW.Print("Editing is locked during combat.") return end
+	state.edit = on and true or false
+	state.swapFrom = nil
+	if wheel then EditVisuals(); RefreshDecision() end
 end
 
 function RW.RefreshWheel()

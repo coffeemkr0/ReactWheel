@@ -177,6 +177,27 @@ RW.DeleteWheel(cid)
 local r1 = RW.P().settings.rules[1].id
 eq(RW.MoveRule(1, 1), true, "rule down"); eq(RW.P().settings.rules[2].id, r1, "rule moved"); RW.MoveRule(2, -1)
 eq(RW.MoveRule(1, -1), false, "rule can't move above top")
+-- swap slots, reset everything
+local sw = RW.P().wheels.quick
+local first, second = sw.items[1], sw.items[2]
+eq(RW.SwapSlots("quick", 1, 2), true, "swap"); eq(sw.items[1], second, "slot 1 now holds old slot 2"); eq(sw.items[2], first, "slot 2 now holds old slot 1")
+eq(RW.SwapSlots("quick", 1, 1), false, "swap with itself"); eq(RW.SwapSlots("quick", 1, 99), false, "swap out of range")
+RW.SwapSlots("quick", 1, 2)
+RW.P().settings.buttonSize = 99; RW.NewWheel("junk"); ReactWheelDB.minimap.angle = 10
+ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
+RW.ResetAll()
+eq(RW.P().settings.buttonSize, 56, "settings reset"); eq(#RW.P().order, 4, "wheels reset"); eq(ReactWheelDB.minimap.angle, 215, "minimap reset")
+eq(ReactWheelCharDB.profile, nil, "character profile removed"); eq(ReactWheelCharDB.useChar, false, "back to account profile")
+SlashCmdList.REACTWHEEL("reset"); eq(RW.P().settings.buttonSize, 56, "plain /rw reset changes nothing")
+SlashCmdList.REACTWHEEL("reset all")
+-- in-wheel edit mode: click one slot, then another, to swap
+RW.OpenWheel(); local q1, q2 = RW.P().wheels.quick.items[1], RW.P().wheels.quick.items[2]
+RW.SetEditMode(true); RW.Activate(1, "LeftButton"); RW.Activate(2, "LeftButton")
+eq(RW.P().wheels.quick.items[1], q2, "edit mode swapped slot 1"); eq(RW.P().wheels.quick.items[2], q1, "edit mode swapped slot 2")
+RW.Activate(3, "LeftButton"); RW.Activate(3, "LeftButton"); eq(#_SENT >= 0, true, "same slot twice cancels the pick")
+RW.SetEditMode(false); RW.SwapSlots("quick", 1, 2)
+_COMBAT = true; RW.SetEditMode(true); _COMBAT = false
+RW.SetEditMode(false); RW.CloseWheel()
 -- settings window / minimap smoke
 RW.ShowConfig(); RW.UpdateMinimap()
 _COMBAT = true; RW.ShowConfig(); _COMBAT = false
@@ -241,6 +262,7 @@ SlashCmdList.REACTWHEEL("size font 2"); eq(RW.P().settings.fontScale, 2, "font s
 SlashCmdList.REACTWHEEL("size hub 9"); eq(RW.P().settings.hubScale, 2.5, "hub scale clamped")
 SlashCmdList.REACTWHEEL("size buttons 80"); eq(RW.P().settings.buttonSize, 80, "button size")
 RW.OpenWheel(); RW.PageWheel(1); RW.CloseWheel()
+RW.OpenWheel(); RW.Activate(1, "LeftButton", false, false); RW.CloseWheel()
 SlashCmdList.REACTWHEEL("size font 1"); SlashCmdList.REACTWHEEL("size hub 1"); SlashCmdList.REACTWHEEL("size buttons 56")
 SlashCmdList.REACTWHEEL("debug"); SlashCmdList.REACTWHEEL("help")
 
