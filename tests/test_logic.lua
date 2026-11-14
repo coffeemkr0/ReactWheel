@@ -141,6 +141,11 @@ RW.EditSlot("quick", 1)
 eq(string.find(_PRINTED[#_PRINTED] or "", "combat") ~= nil, true, "edit locked in combat")
 _COMBAT = false
 SlashCmdList.REACTWHEEL("wheel social"); eq(RW.P().current, "social", "slash wheel")
+SlashCmdList.REACTWHEEL("size font 2"); eq(RW.P().settings.fontScale, 2, "font scale set")
+SlashCmdList.REACTWHEEL("size hub 9"); eq(RW.P().settings.hubScale, 2.5, "hub scale clamped")
+SlashCmdList.REACTWHEEL("size buttons 80"); eq(RW.P().settings.buttonSize, 80, "button size")
+RW.OpenWheel(); RW.PageWheel(1); RW.CloseWheel()
+SlashCmdList.REACTWHEEL("size font 1"); SlashCmdList.REACTWHEEL("size hub 1"); SlashCmdList.REACTWHEEL("size buttons 56")
 SlashCmdList.REACTWHEEL("debug"); SlashCmdList.REACTWHEEL("help")
 
 print(string.format("%d checks, %d failed", total, fails))

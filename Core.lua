@@ -110,7 +110,7 @@ end)
 ---------------------------------------------------------------------------
 local function Help()
 	RW.Print("Bind a key under Key Bindings > ReactWheel.")
-	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw debug | /rw reset")
+	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <prefill|direct> | /rw size | /rw debug | /rw reset")
 end
 
 function RW.OpenConfig()
@@ -155,6 +155,21 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		if RW.debug then
 			local d = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, RW.P().settings)
 			RW.Print("would send to: " .. d.label .. " (" .. d.reason .. ", confidence " .. d.confidence .. ")")
+		end
+	elseif cmd == "size" then
+		-- /rw size buttons|font|hub <number>
+		local what, num = string.match(rest, "^(%a+)%s+([%d%.]+)$")
+		num = tonumber(num)
+		local S = RW.P().settings
+		local map = { buttons = { "buttonSize", 40, 110 }, font = { "fontScale", 0.7, 2.5 }, hub = { "hubScale", 0.8, 2.5 } }
+		local m = what and map[what]
+		if m and num then
+			S[m[1]] = math.max(m[2], math.min(m[3], num))
+			RW.Print(what .. " = " .. S[m[1]])
+			if RW.RefreshWheel then RW.RefreshWheel() end
+		else
+			RW.Print("/rw size buttons <40-110> | font <0.7-2.5> | hub <0.8-2.5>   (now " ..
+				S.buttonSize .. " / " .. S.fontScale .. " / " .. S.hubScale .. ")")
 		end
 	elseif cmd == "say" then
 		rest = string.lower(rest)

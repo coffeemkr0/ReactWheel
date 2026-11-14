@@ -3,14 +3,14 @@ ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
 local TEX = "Interface\\AddOns\\ReactWheel\\Textures\\"
-local BTN, HUB, MAXSLOTS = 56, 48, 12
+local MAXSLOTS = 12
 
 local wheel, catcher, picker
 local slotFrames = {}
 local state = {
 	shown = nil,    -- id of the wheel being displayed
 	stack = {},     -- ids to go back to after opening a sub-wheel
-	n = 8, radius = 105,
+	n = 8, radius = 105, btn = 56, hub = 48, fs = 1,
 	hover = nil, inHub = false,
 	override = nil, -- destination pinned by clicking the hub
 	altIndex = 1,
@@ -45,7 +45,7 @@ end
 local function Face(f, slot)
 	if RW.IsEmpty(slot) then
 		f.icon:Hide()
-		f.text:SetFont("Fonts\\ARIALN.TTF", 20)
+		f.text:SetFont("Fonts\\ARIALN.TTF", 20 * state.fs)
 		f.text:SetText("+")
 		f.text:SetTextColor(0.45, 0.45, 0.45)
 		return
@@ -61,7 +61,7 @@ local function Face(f, slot)
 		local label = SlotName(slot)
 		local len = string.len(label)
 		f.icon:Hide()
-		f.text:SetFont("Fonts\\ARIALN.TTF", (len <= 3 and 20) or (len <= 6 and 15) or 12)
+		f.text:SetFont("Fonts\\ARIALN.TTF", ((len <= 3 and 20) or (len <= 6 and 15) or 12) * state.fs)
 		f.text:SetText(label)
 		f.text:SetTextColor(c[1], c[2], c[3])
 	end
@@ -81,6 +81,38 @@ local function SetHover(idx)
 	end
 end
 
+local function Font(fs, size) fs:SetFont("Fonts\\ARIALN.TTF", size) end
+
+-- Size and place the centre controls; everything scales with the "hubScale" setting.
+local function LayoutHub(hs)
+	local h = state.hub
+	wheel.hubBg:SetWidth(h * 2)
+	wheel.hubBg:SetHeight(h * 2)
+	Font(wheel.name, 12 * hs)
+	Font(wheel.dest, 11 * hs)
+	Font(wheel.pageText, 10 * hs)
+	wheel.name:ClearAllPoints()
+	wheel.name:SetPoint("CENTER", wheel, "CENTER", 0, 24 * hs)
+	wheel.destBtn:SetWidth(h * 2 - 8)
+	wheel.destBtn:SetHeight(18 * hs)
+	wheel.destBtn:ClearAllPoints()
+	wheel.destBtn:SetPoint("CENTER", wheel, "CENTER", 0, 6 * hs)
+	wheel.pageText:ClearAllPoints()
+	wheel.pageText:SetPoint("CENTER", wheel, "CENTER", 0, -12 * hs)
+	for _, b in ipairs({ wheel.prev, wheel.next, wheel.close }) do
+		b:SetWidth(20 * hs)
+		b:SetHeight(18 * hs)
+		Font(b.t, 14 * hs)
+	end
+	wheel.prev:ClearAllPoints()
+	wheel.prev:SetPoint("CENTER", wheel, "CENTER", -30 * hs, -12 * hs)
+	wheel.next:ClearAllPoints()
+	wheel.next:SetPoint("CENTER", wheel, "CENTER", 30 * hs, -12 * hs)
+	wheel.close:ClearAllPoints()
+	wheel.close:SetPoint("CENTER", wheel, "CENTER", 0, -31 * hs)
+	picker:SetScale(math.max(1, hs))
+end
+
 local function UpdateHub()
 	local p = P()
 	local pos, count = 1, #p.order
@@ -93,14 +125,25 @@ end
 local function Render()
 	local def = Def()
 	local S = P().settings
+	local hs = S.hubScale or 1
 	state.n = def.slots
-	state.radius = S.radius
-	local size = 2 * (state.radius + BTN / 2 + 4)
+	state.fs = S.fontScale or 1
+	state.btn = S.buttonSize or 56
+	state.hub = 48 * hs
+	-- keep the ring clear of the centre controls and of neighbouring buttons
+	local minR = math.max(state.hub + state.btn / 2 + 8, state.btn * state.n / (2 * math.pi) + 4)
+	state.radius = math.max(S.radius, minR)
+	local size = 2 * (state.radius + state.btn / 2 + 4)
+	LayoutHub(hs)
 	wheel:SetWidth(size)
 	wheel:SetHeight(size)
 	local step = 2 * math.pi / state.n
 	for i = 1, MAXSLOTS do
 		local f = slotFrames[i]
+		f:SetWidth(state.btn)
+		f:SetHeight(state.btn)
+		f.icon:SetWidth(state.btn - 14)
+		f.icon:SetHeight(state.btn - 14)
 		if i <= state.n then
 			local a = (i - 1) * step -- clockwise from the top
 			f:ClearAllPoints()
@@ -316,17 +359,15 @@ local function Build()
 
 	-- hub
 	wheel.hubBg = wheel:CreateTexture(nil, "BACKGROUND")
-	wheel.hubBg:SetWidth(HUB * 2)
-	wheel.hubBg:SetHeight(HUB * 2)
-	wheel.hubBg:SetPoint("CENTER", wheel, "CENTER", 0, 0)
+		wheel.hubBg:SetPoint("CENTER", wheel, "CENTER", 0, 0)
 	wheel.hubBg:SetTexture(TEX .. "Circle")
 	wheel.hubBg:SetVertexColor(0.03, 0.03, 0.06, 0.9)
 	wheel.name = wheel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	wheel.name:SetPoint("CENTER", wheel, "CENTER", 0, 24)
 	wheel.dest = wheel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	wheel.destBtn = CreateFrame("Button", nil, wheel)
-	wheel.destBtn:SetWidth(HUB * 2 - 8)
-	wheel.destBtn:SetHeight(16)
+	wheel.destBtn:SetWidth(88)
+	wheel.destBtn:SetHeight(18)
 	wheel.destBtn:SetPoint("CENTER", wheel, "CENTER", 0, 6)
 	wheel.dest:SetPoint("CENTER", wheel.destBtn, "CENTER", 0, 0)
 	wheel.destBtn:SetScript("OnClick", function()
@@ -371,8 +412,8 @@ local function Build()
 	-- slots
 	for i = 1, MAXSLOTS do
 		local f = CreateFrame("Frame", nil, wheel)
-		f:SetWidth(BTN)
-		f:SetHeight(BTN)
+		f:SetWidth(56)
+		f:SetHeight(56)
 		f.bg = f:CreateTexture(nil, "BACKGROUND")
 		f.bg:SetAllPoints(f)
 		f.bg:SetTexture(TEX .. "Circle")
@@ -387,8 +428,8 @@ local function Build()
 		f.hl:SetVertexColor(0.2, 0.55, 1, 0.6)
 		f.hl:Hide()
 		f.icon = f:CreateTexture(nil, "OVERLAY")
-		f.icon:SetWidth(BTN - 14)
-		f.icon:SetHeight(BTN - 14)
+		f.icon:SetWidth(42)
+		f.icon:SetHeight(42)
 		f.icon:SetPoint("CENTER", f, "CENTER", 0, 0)
 		f.text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		f.text:SetPoint("CENTER", f, "CENTER", 0, 0)
@@ -406,8 +447,8 @@ local function Build()
 		local dx, dy = mx / es - cx, my / es - cy
 		local d = math.sqrt(dx * dx + dy * dy)
 		local idx
-		state.inHub = d <= HUB + 4
-		if d > HUB + 4 and d <= state.radius + BTN / 2 + 6 then
+		state.inHub = d <= state.hub + 4
+		if d > state.hub + 4 and d <= state.radius + state.btn / 2 + 6 then
 			local a = math.atan2(dx, dy)
 			if a < 0 then a = a + 2 * math.pi end
 			idx = math.floor(a / (2 * math.pi / state.n) + 0.5) % state.n + 1
@@ -436,6 +477,10 @@ local function Build()
 	end)
 end
 
+function RW.RefreshWheel()
+	if wheel and wheel:IsShown() then Render() end
+end
+
 function RW.OpenWheel(id)
 	if not wheel then Build() end
 	local p = P()
@@ -454,7 +499,7 @@ function RW.OpenWheel(id)
 	else
 		local es = wheel:GetEffectiveScale()
 		local x, y = GetCursorPosition()
-		local half = state.radius + BTN / 2 + 4
+		local half = state.radius + state.btn / 2 + 4
 		local w = UIParent:GetWidth() * UIParent:GetEffectiveScale() / es
 		local h = UIParent:GetHeight() * UIParent:GetEffectiveScale() / es
 		x = math.max(half, math.min(w - half, x / es))
