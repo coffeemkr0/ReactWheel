@@ -5,7 +5,28 @@ BINDING_HEADER_REACTWHEEL = "ReactWheel"
 BINDING_NAME_REACTWHEEL_SHOW = "Reaction wheel (hold)"
 BINDING_NAME_HEADER_REACTWHEEL = "ReactWheel" -- some clients look the header up as a binding name
 
-local DEFAULTS = { "+1", "LOL", "GG", "thx!", "<3", "brb", "o7", "?!" }
+local DEFAULTS = { "{up}", "{down}", "LOL", "GG", "thx!", "<3", "brb", "?!" }
+local DB_VERSION = 2
+-- Icon slots: drawn as a picture on the wheel; the chat text sent is shown here.
+local ICONS = {
+	["{up}"]   = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsUp",   r = 0.3, g = 1,   b = 0.3, send = "+1" },
+	["{down}"] = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsDown", r = 1,   g = 0.3, b = 0.3, send = "-1" },
+}
+
+local function Resolve(r) return ICONS[r] and ICONS[r].send or r end
+
+local function Face(b, r)
+	local ic = ICONS[r]
+	if ic then
+		b.icon:SetTexture(ic.tex)
+		b.icon:SetVertexColor(ic.r, ic.g, ic.b)
+		b.icon:Show()
+		b.text:SetText("")
+	else
+		b.icon:Hide()
+		b.text:SetText(r)
+	end
+end
 local RADIUS, DEADZONE, BTN = 110, 35, 64
 
 local wheel, buttons, selected = nil, {}, nil
@@ -17,6 +38,10 @@ end
 
 local function Reactions()
 	ReactWheelDB = ReactWheelDB or {}
+	if ReactWheelDB.ver ~= DB_VERSION then
+		ReactWheelDB.reactions = nil -- defaults changed (thumbs up/down)
+		ReactWheelDB.ver = DB_VERSION
+	end
 	if not ReactWheelDB.reactions then
 		ReactWheelDB.reactions = {}
 		for i = 1, 8 do ReactWheelDB.reactions[i] = DEFAULTS[i] end
@@ -82,11 +107,15 @@ local function Build()
 		b.hl:Hide()
 		b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
 		b.text:SetPoint("CENTER", b, "CENTER", 0, 0)
-		b.text:SetText(reactions[i])
+		b.icon = b:CreateTexture(nil, "OVERLAY")
+		b.icon:SetWidth(44)
+		b.icon:SetHeight(44)
+		b.icon:SetPoint("CENTER", b, "CENTER", 0, 0)
+		Face(b, reactions[i])
 		b.index = i
 		b:SetScript("OnClick", function()
 			local self = this or b
-			Send(Reactions()[self.index])
+			Send(Resolve(Reactions()[self.index]))
 			wheel:Hide()
 		end)
 		buttons[i] = b
@@ -124,7 +153,7 @@ end
 function ReactWheel_Release()
 	if not wheel or not wheel:IsVisible() then return end
 	wheel:Hide()
-	if selected then Send(Reactions()[selected]) end
+	if selected then Send(Resolve(Reactions()[selected])) end
 end
 
 -- Track who to reply to.
@@ -159,14 +188,14 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		n = tonumber(n)
 		if n and n >= 1 and n <= 8 then
 			Reactions()[n] = text
-			if buttons[n] then buttons[n].text:SetText(text) end
+			if buttons[n] then Face(buttons[n], text) end
 			Print("slot " .. n .. " = " .. text)
 			return
 		end
 	elseif cmd == "reset" then
 		ReactWheelDB.reactions = nil
 		Reactions()
-		for i = 1, 8 do if buttons[i] then buttons[i].text:SetText(Reactions()[i]) end end
+		for i = 1, 8 do if buttons[i] then Face(buttons[i], Reactions()[i]) end end
 		Print("reactions reset")
 		return
 	elseif cmd == "reply" then
@@ -178,5 +207,6 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		return
 	end
 	Print("Bind a key in Key Bindings > ReactWheel; hold, flick, release.")
+	Print("Slot text may be {up} or {down} for thumbs icons.")
 	Print("/rw set <1-8> <text>   /rw reset   /rw reply <auto|party|raid|say>")
 end
