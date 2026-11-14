@@ -69,6 +69,7 @@ local function Face(f, slot)
 end
 
 local function SetHover(idx)
+	if idx and idx ~= state.hover then RW.Sound("hover") end
 	state.hover = idx
 	for i = 1, MAXSLOTS do
 		local f = slotFrames[i]
@@ -539,6 +540,7 @@ function RW.OpenWheel(id)
 	if not wheel then Build() end
 	local p = P()
 	local S = p.settings
+	if not id and S.autoWheel then id = RW.Targeting.PickWheel(RW.Targeting.Env(), RW.Targeting.ctx, S, p) end
 	id = id or p.current
 	if not p.wheels[id] then id = p.order[1] end
 	p.current = id

@@ -106,6 +106,8 @@ eq(#RW.P().order, 4, "four wheels"); eq(RW.P().wheels.quick.slots, 8, "slots")
 eq(RW.P().wheels.quick.items[3].text, "\226\153\165", "heart text")
 ReactWheelDB.ver = 4; ReactWheelDB.profile.settings.sayMode = "prefill"; RW.InitDB()
 eq(ReactWheelDB.profile.settings.sayMode, "direct", "migrated to direct")
+ReactWheelDB.profile.wheels.quick.auto = nil; ReactWheelDB.autoDefaults = nil; RW.InitDB()
+eq(ReactWheelDB.profile.wheels.quick.auto, "whisper", "auto hints backfilled")
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"
@@ -198,6 +200,22 @@ RW.Activate(3, "LeftButton"); RW.Activate(3, "LeftButton"); eq(#_SENT >= 0, true
 RW.SetEditMode(false); RW.SwapSlots("quick", 1, 2)
 _COMBAT = true; RW.SetEditMode(true); _COMBAT = false
 RW.SetEditMode(false); RW.CloseWheel()
+-- context-aware wheel choice
+Tg.ctx = {}; local pp = RW.P(); local SA = RW.Copy(pp.settings)
+eq(Tg.PickWheel(env({}), Tg.ctx, SA, pp), "social", "solo -> solo wheel")
+eq(Tg.PickWheel(env({ inParty = true }), Tg.ctx, SA, pp), "dungeon", "party -> party wheel")
+eq(Tg.PickWheel(env({ inParty = true, inRaid = true }), Tg.ctx, SA, pp), "dungeon", "raid -> party wheel")
+Tg.Observe("WHISPER", "Bob", 990, SA)
+eq(Tg.PickWheel(env({ inParty = true }), Tg.ctx, SA, pp), "quick", "fresh whisper -> whisper wheel")
+Tg.ctx = {}; Tg.Observe("WHISPER", "Bob", 500, SA)
+eq(Tg.PickWheel(env({ inParty = true }), Tg.ctx, SA, pp), "dungeon", "old whisper ignored")
+pp.wheels.social.auto = nil; eq(Tg.PickWheel(env({}), Tg.ctx, SA, pp), nil, "no matching wheel -> nil"); pp.wheels.social.auto = "solo"
+RW.P().settings.autoWheel = true; RW.OpenWheel(); eq(RW.P().current, "social", "auto wheel applied on open"); RW.CloseWheel()
+RW.P().settings.autoWheel = false; RW.P().current = "quick"; Tg.ctx = {}
+-- sounds
+local played = 0; PlaySound = function() played = played + 1 end
+RW.Sound("hover"); eq(played, 0, "no sound when off"); RW.P().settings.sounds = true; RW.Sound("hover"); eq(played, 1, "sound plays when on")
+RW.P().settings.sounds = false; PlaySound = nil
 -- settings window / minimap smoke
 RW.ShowConfig(); RW.UpdateMinimap()
 _COMBAT = true; RW.ShowConfig(); _COMBAT = false

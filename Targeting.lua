@@ -60,6 +60,21 @@ function Tg.Fixed(dest, env)
 	return nil
 end
 
+-- Which wheel suits the situation? Only used when the "switch wheel automatically" setting is on.
+-- Each wheel may carry auto = "whisper" | "party" | "solo" ("party" also covers raids). Returns an id or nil.
+function Tg.PickWheel(env, ctx, S, p)
+	local keys = {}
+	local w = ctx.whisper
+	if w and (env.now - w.time) <= S.whisperWindow then keys[#keys + 1] = "whisper" end
+	if env.inParty then keys[#keys + 1] = "party" else keys[#keys + 1] = "solo" end
+	for _, key in ipairs(keys) do
+		for _, id in ipairs(p.order) do
+			if p.wheels[id] and p.wheels[id].auto == key then return id end
+		end
+	end
+	return nil
+end
+
 -- Pick the destination. Returns the winning candidate plus .confidence ("high"/"low") and .alternatives.
 function Tg.Decide(env, ctx, S)
 	local now = env.now

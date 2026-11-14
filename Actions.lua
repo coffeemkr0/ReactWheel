@@ -2,6 +2,14 @@
 ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
+local SOUND_NAMES = { hover = "igMainMenuOptionCheckBoxOn", send = "igMainMenuOptionCheckBoxOff" }
+local SOUND_KITS = { hover = "IG_MAINMENU_OPTION_CHECKBOX_ON", send = "IG_MAINMENU_OPTION_CHECKBOX_OFF" }
+function RW.Sound(kind, S)
+	S = S or RW.P().settings
+	if not S.sounds or not PlaySound then return end
+	pcall(PlaySound, (SOUNDKIT and SOUNDKIT[SOUND_KITS[kind]]) or SOUND_NAMES[kind])
+end
+
 -- Does the slot need a chat destination at all? (emote-only and command slots do not)
 function RW.NeedsDest(slot)
 	if slot.command and slot.command ~= "" then return false end
@@ -95,4 +103,6 @@ function RW.Execute(slot, cand, S)
 		DoEmote(slot.emote)
 	end
 	if cand then RW.Targeting.OnSent(cand.dest, S) end
+	RW.Sound("send", S)
+	return true
 end

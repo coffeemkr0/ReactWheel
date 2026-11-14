@@ -14,6 +14,8 @@ RW.DEFAULT_SETTINGS = {
 	fontScale = 1,            -- text size on the slice buttons (0.7-2.5)
 	hubScale = 1,             -- size of the centre controls and their text (0.8-2.5)
 	defaultDest = "AUTO",
+	autoWheel = false,        -- open the wheel that suits the situation (see each wheel's "auto" field)
+	sounds = false,           -- hover tick and send confirmation sounds
 	minInterval = 0.5,        -- seconds between reactions (spam guard, 0 = off)
 	sayMode = "direct",       -- "direct" (send, falling back to the chat box if the game blocks it) or "prefill" (always use the chat box)
 	askMode = "low",          -- "low" (ask when unsure), "never", "always"
@@ -45,7 +47,7 @@ end
 function RW.DefaultWheels()
 	local wheels = {
 		quick = {
-			name = "Quick Chat", slots = 8,
+			name = "Quick Chat", slots = 8, auto = "whisper",
 			items = {
 				slot(nil, CHECK, "NOD", { icon = TEX .. "ThumbsUp", color = { 0.3, 1, 0.3 } }),
 				slot(nil, DOWN, "NO", { icon = TEX .. "ThumbsDown", color = { 1, 0.3, 0.3 } }),
@@ -58,7 +60,7 @@ function RW.DefaultWheels()
 			},
 		},
 		dungeon = {
-			name = "Dungeon / Raid", slots = 8,
+			name = "Dungeon / Raid", slots = 8, auto = "party",
 			items = {
 				slot("ready", "ready"),
 				slot("wait", "wait"),
@@ -71,7 +73,7 @@ function RW.DefaultWheels()
 			},
 		},
 		social = {
-			name = "Social / Guild", slots = 8,
+			name = "Social / Guild", slots = 8, auto = "solo",
 			items = {
 				slot("gz!", "gz!", "CONGRATULATE"),
 				slot("hi", "hi!", "HELLO"),

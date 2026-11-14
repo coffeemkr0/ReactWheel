@@ -176,7 +176,7 @@ local function BuildWheelsTab(t)
 	Button(t, "Down", 405, -30, 50, function() local _, id = Selected(); RW.MoveWheel(id, 1); RefreshWheels() end)
 
 	Text(t, "Name", 165, -66, "GameFontNormalSmall")
-	frame.wheelName = Edit(t, 215, -62, 200, function(txt)
+	frame.wheelName = Edit(t, 215, -62, 145, function(txt)
 		local def = Selected()
 		if txt ~= "" and txt ~= def.name then def.name = txt; RefreshWheels(); OnChanged() end
 	end)
@@ -184,20 +184,22 @@ local function BuildWheelsTab(t)
 		function() return (Selected()).slots end,
 		function(v) local _, id = Selected(); RW.SetSlotCount(id, v); RefreshWheels() end)
 	local destOpts = { { nil, "Smart reply" }, { "SAY", "Say" }, { "PARTY", "Party" }, { "RAID", "Raid" }, { "GUILD", "Guild" } }
+	local autoOpts = { { nil, "Never" }, { "whisper", "After a whisper" }, { "party", "In a party / raid" }, { "solo", "When solo" } }
+	Cycle(t, "Auto-opens", 165, -154, autoOpts, function() return (Selected()).auto end, function(v) (Selected()).auto = v end, 130)
 	Cycle(t, "Wheel sends to", 165, -128, destOpts,
 		function() return (Selected()).dest end, function(v) (Selected()).dest = v end, 130)
 
-	Text(t, "Slots (click to edit; clockwise from the top)", 165, -160, "GameFontNormalSmall")
+	Text(t, "Slots (click to edit; clockwise from the top)", 165, -186, "GameFontNormalSmall")
 	for i = 1, 12 do
 		local b = CreateFrame("Button", nil, t, "UIPanelButtonTemplate")
 		b:SetWidth(66)
 		b:SetHeight(26)
 		local col, row = (i - 1) % 4, math.floor((i - 1) / 4)
-		b:SetPoint("TOPLEFT", t, "TOPLEFT", 165 + col * 70, -180 - row * 30)
+		b:SetPoint("TOPLEFT", t, "TOPLEFT", 165 + col * 70, -204 - row * 30)
 		b:SetScript("OnClick", function() local _, id = Selected(); RW.EditSlot(id, i) end)
 		slotButtons[i] = b
 	end
-	Button(t, "Open this wheel", 165, -280, 120, function() local _, id = Selected(); RW.OpenWheel(id) end)
+	Button(t, "Open it", 372, -62, 70, function() local _, id = Selected(); RW.OpenWheel(id) end)
 	refreshers[#refreshers + 1] = RefreshWheels
 end
 
@@ -218,6 +220,8 @@ local function BuildDisplayTab(t)
 		function() return S().openMode end, function(v) S().openMode = v end, 130)
 	Cycle(t, "Appears", 250, -62, { { "cursor", "At the cursor" }, { "center", "Screen centre" } },
 		function() return S().openAt end, function(v) S().openAt = v end, 130)
+	Check(t, "Switch wheel to suit the situation", 250, -246, function() return S().autoWheel end, function(v) S().autoWheel = v end)
+	Check(t, "Play sounds", 250, -270, function() return S().sounds end, function(v) S().sounds = v end)
 	Check(t, "Show the minimap button", 250, -92,
 		function() return not ReactWheelDB.minimap.hide end,
 		function(v) ReactWheelDB.minimap.hide = not v; RW.UpdateMinimap() end)

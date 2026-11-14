@@ -23,6 +23,8 @@ Starter wheels: **Quick Chat**, **Dungeon / Raid**, **Social / Guild**, **Emotes
 
 **Rearranging:** press the **E** button in the centre of the wheel for edit mode, then click a slot and click another to swap them. Right-click still edits a slot.
 
+**Smart extras:** Settings > Display has "Switch wheel to suit the situation" (opens the Quick Chat wheel after a whisper, Dungeon / Raid in a group, Social / Guild when solo; change it per wheel on the Wheels tab) and "Play sounds".
+
 **Starting over:** Settings > Display > Reset everything (or `/rw reset all`) restores every wheel and setting to the defaults.
 
 ## Where does it send?

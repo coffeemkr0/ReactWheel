@@ -159,6 +159,16 @@ function RW.InitDB()
 		local function fix(p) if p and p.settings then p.settings.sayMode = "direct" end end
 		fix(db.profile); fix(ReactWheelCharDB.profile)
 	end
+	if not db.autoDefaults then
+		-- wheels created before auto-open existed get the default hints (only matters if the setting is switched on)
+		local hints = { quick = "whisper", dungeon = "party", social = "solo" }
+		local function fix(p)
+			if not (p and p.wheels) then return end
+			for id, a in pairs(hints) do if p.wheels[id] and p.wheels[id].auto == nil then p.wheels[id].auto = a end end
+		end
+		fix(db.profile); fix(ReactWheelCharDB.profile)
+		db.autoDefaults = true
+	end
 	db.ver = RW.DB_VERSION
 	Sanitize(db.profile)
 	if ReactWheelCharDB.profile then Sanitize(ReactWheelCharDB.profile) end
