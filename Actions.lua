@@ -35,7 +35,9 @@ function RW.QuietCall(fn, ...)
 		end
 	end
 	local ok, err = pcall(fn, ...)
-	for _, h in ipairs(held) do pcall(h[1].RegisterEvent, h[1], h[2]) end
+	-- put the popup back after a short delay in case the game announces the refusal a moment late
+	local function restore() for _, h in ipairs(held) do pcall(h[1].RegisterEvent, h[1], h[2]) end end
+	if #held > 0 and RW.After then RW.After(0.3, restore) else restore() end
 	return ok, err
 end
 
@@ -81,17 +83,32 @@ function RW.RunCommand(line)
 end
 
 -- The game blocked a chat send from us: hand the line to the player's chat box instead.
-function RW.OnActionBlocked(addon, func)
-	local p = RW.pendingSend
-	if not p or addon ~= "ReactWheel" or not (func and string.find(func, "SendChatMessage", 1, true)) then return end
-	RW.pendingSend = nil
-	local prefix = (p.dest == "SAY" and "/s ") or (p.dest == "PARTY" and "/p ") or (p.dest == "RAID" and "/raid ")
-		or (p.dest == "GUILD" and "/g ") or "/s "
-	if ChatFrame_OpenChat then ChatFrame_OpenChat(prefix .. p.text) end
+-- Put a message the game wouldn't let us send into the chat box, ready for the player to press Enter.
+function RW.Fallback(dest, text)
+	local prefix = (dest == "PARTY" and "/p ") or (dest == "RAID" and "/raid ") or (dest == "GUILD" and "/g ") or "/s "
+	if ChatFrame_OpenChat then ChatFrame_OpenChat(prefix .. text) end
 	if not RW.blockedHinted then
 		RW.blockedHinted = true
-		RW.Print("The game wouldn't let the addon send that /say from here, so it is in your chat box - press Enter. The addon tries to send directly every time and falls back like this when it can't.")
+		RW.Print("The game wouldn't let the addon send that from here, so it is in your chat box - press Enter. The addon tries to send directly every time and falls back like this when it can't.")
 	end
+end
+
+-- The game announces a refused call with ADDON_ACTION_BLOCKED/FORBIDDEN while our call is still running.
+function RW.OnActionBlocked(addon, func)
+	local w, p = RW.sayWatch, RW.pendingSend
+	if w and not w.done then
+		w.done = true
+		RW.Fallback("SAY", w.text)
+	elseif p then
+		RW.pendingSend = nil
+		RW.Fallback(p.dest, p.text)
+	end
+end
+
+-- Called when a CHAT_MSG_SAY arrives: if it is the line we just sent, the send worked.
+function RW.NoteSay(text)
+	local w = RW.sayWatch
+	if w and not w.done and text == w.text then w.done = true end
 end
 
 -- Run the slot. cand is the chosen destination (nil for slots that need none).
@@ -115,7 +132,17 @@ function RW.Execute(slot, cand, S)
 				-- line in the chat box instead. For /say that refusal is routine, so keep the popup quiet.
 				RW.pendingSend = { dest = cand.dest, text = text }
 				if cand.dest == "SAY" then
+					-- A refused /say may arrive as an event, or as nothing at all. Cover both: if the event doesn't
+					-- bring the fallback, check shortly afterwards whether our line showed up in chat.
+					local watch = { text = text, done = false }
+					RW.sayWatch = watch
 					RW.QuietCall(SendChatMessage, text, "SAY")
+					RW.After(0.8, function()
+						if not watch.done then
+							watch.done = true
+							RW.Fallback("SAY", text)
+						end
+					end)
 				else
 					SendChatMessage(text, cand.dest)
 				end

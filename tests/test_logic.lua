@@ -137,23 +137,45 @@ local function fakeFrame(name) return { name = name, UnregisterEvent = function(
 local ui, other = fakeFrame("ui"), fakeFrame("other")
 GetFramesRegisteredForEvent = function(ev) if ev == "ADDON_ACTION_BLOCKED" then return ui, other end return ui end
 regs.uiADDON_ACTION_BLOCKED, regs.uiADDON_ACTION_FORBIDDEN, regs.otherADDON_ACTION_BLOCKED = true, true, true
+_TIMERS = {}; C_Timer = { After = function(_, fn) _TIMERS[#_TIMERS + 1] = fn end }
+local function flush() local ts = _TIMERS; _TIMERS = {}; for _, f in ipairs(ts) do f() end end
 local during
 RW.QuietCall(function() during = { regs.uiADDON_ACTION_BLOCKED, regs.otherADDON_ACTION_BLOCKED, regs.uiADDON_ACTION_FORBIDDEN } end)
+flush()
 eq(during[1], false, "popup frame detached during call"); eq(during[2], false, "second frame detached"); eq(during[3], false, "forbidden event detached")
 eq(regs.uiADDON_ACTION_BLOCKED, true, "popup frame restored"); eq(regs.otherADDON_ACTION_BLOCKED, true, "second frame restored"); eq(regs.uiADDON_ACTION_FORBIDDEN, true, "forbidden restored")
-local ok = RW.QuietCall(function() error("boom") end)
+local ok = RW.QuietCall(function() error("boom") end); flush()
 eq(ok, false, "error is contained"); eq(regs.uiADDON_ACTION_BLOCKED, true, "frames restored after an error")
+-- delayed restore while a timer is pending
+RW.QuietCall(function() end)
+eq(regs.uiADDON_ACTION_BLOCKED, false, "popup stays off until the timer fires"); flush()
+eq(regs.uiADDON_ACTION_BLOCKED, true, "popup back after the delay"); C_Timer = nil
 GetFramesRegisteredForEvent = nil
 -- game refuses the send: chat-box fallback
-_PREFILL = {}
+local function runTimers() local ts = _TIMERS; _TIMERS = {}; for _, f in ipairs(ts) do f() end end
+_TIMERS = {}; C_Timer = { After = function(_, fn) _TIMERS[#_TIMERS + 1] = fn end }
 local realSend = SendChatMessage
+-- (a) the send works and the line shows up in chat: no fallback
+_PREFILL = {}
+SendChatMessage = function(text) RW.NoteSay(text) end
+RW.Execute({ text = "yo" }, { dest = "SAY" }, S); runTimers()
+eq(#_PREFILL, 0, "say that appeared in chat needs no fallback")
+-- (b) the game raises the blocked event: immediate fallback, and no second fallback from the timer
+_PREFILL = {}
 SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
 RW.Execute({ text = "yo" }, { dest = "SAY" }, S)
-eq(_PREFILL[1], "/s yo", "refused say falls back to the chat box")
+eq(_PREFILL[1], "/s yo", "refused say falls back to the chat box"); runTimers(); eq(#_PREFILL, 1, "timer does not double-fall back")
+-- (c) silently refused (no event, no chat line): the timer falls back
+_PREFILL = {}
+SendChatMessage = function() end
+RW.Execute({ text = "quiet" }, { dest = "SAY" }, S); eq(#_PREFILL, 0, "nothing yet"); runTimers()
+eq(_PREFILL[1], "/s quiet", "silent refusal caught by the timer")
+_PREFILL = {}
+SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
 RW.Execute({ text = "to party" }, { dest = "PARTY" }, S)
-eq(_PREFILL[2], "/p to party", "refused party message falls back with the right prefix")
-RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 2, "other addons ignored")
-SendChatMessage = realSend
+eq(_PREFILL[1], "/p to party", "refused party message falls back with the right prefix")
+RW.OnActionBlocked("Other", "x"); eq(#_PREFILL, 1, "a block event with nothing pending is ignored")
+SendChatMessage = realSend; C_Timer = nil; runTimers()
 -- always-chat-box mode
 S.sayMode = "prefill"; _SENT, _PREFILL = {}, {}
 RW.Execute({ text = "pf" }, { dest = "SAY" }, S); eq(#_SENT, 0, "prefill mode does not send"); eq(_PREFILL[1], "/s pf", "prefill mode uses the chat box")

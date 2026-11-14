@@ -35,6 +35,22 @@ function RW.BaseName(n)
 	return string.match(n, "^([^%-]+)") or n
 end
 
+-- run fn after `delay` seconds (C_Timer when the client has it, otherwise a small OnUpdate timer)
+local timers, timerFrame = {}, nil
+function RW.After(delay, fn)
+	if C_Timer and C_Timer.After then C_Timer.After(delay, fn) return end
+	timers[#timers + 1] = { at = GetTime() + delay, fn = fn }
+	if not timerFrame then
+		timerFrame = CreateFrame("Frame")
+		timerFrame:SetScript("OnUpdate", function()
+			local now = GetTime()
+			for i = #timers, 1, -1 do
+				if now >= timers[i].at then local t = table.remove(timers, i); pcall(t.fn) end
+			end
+		end)
+	end
+end
+
 function RW.InCombat()
 	if InCombatLockdown and InCombatLockdown() then return true end
 	return UnitAffectingCombat and UnitAffectingCombat("player") and true or false
@@ -193,7 +209,12 @@ for _, ev in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do pca
 for ev in pairs(OBSERVED) do pcall(frame.RegisterEvent, frame, ev) end -- skip events this client lacks
 RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 	if event == "VARIABLES_LOADED" then RW.InitDB() return end
-	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then RW.OnActionBlocked(a1, a2) return end
+	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then
+		if RW.debug then RW.Print("blocked-action event: " .. tostring(a1) .. " / " .. tostring(a2)) end
+		RW.OnActionBlocked(a1, a2)
+		return
+	end
+	if event == "CHAT_MSG_SAY" and RW.NoteSay then RW.NoteSay(a1) end -- did our /say actually go out?
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
 	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer
