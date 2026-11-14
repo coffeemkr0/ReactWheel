@@ -1,6 +1,6 @@
 -- Run via tests/run_tests.py (Lua 5.1 through lupa). Run from the repo root.
 dofile("tests/wow_stubs.lua")
-for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel" }) do
+for _, f in ipairs({ "Locales", "Core", "Defaults", "Targeting", "Actions", "Wheel", "Editor" }) do
 	assert(loadfile(f .. ".lua"), f)()
 end
 local RW = ReactWheel
@@ -153,6 +153,17 @@ RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 1, "other a
 SendChatMessage = realSend
 RW.sayUnlocked = true; S.sayMode = "prefill"; RW.Execute({ text = "hi2" }, { dest = "SAY" }, S)
 eq(_PREFILL[2], "/s hi2", "prefill mode"); S.sayMode = "direct"
+
+-- slot editor field conversion
+local sl = RW.SlotFromFields({ label = "  hi ", text = "yo %t", emote = "wave", emoteWhen = "always", command = "", dest = "PARTY",
+	icon = "None", color = "green", opensWheel = nil })
+eq(sl.label, "hi", "label trimmed"); eq(sl.text, "yo %t", "text"); eq(sl.emote, "WAVE", "emote upper")
+eq(sl.emoteWhen, "always", "emoteWhen"); eq(sl.command, nil, "empty command dropped"); eq(sl.dest, "PARTY", "dest")
+eq(sl.icon, nil, "icon none dropped"); eq(sl.color[2], 1, "colour"); eq(sl.opensWheel, nil, "opens none")
+eq(string.len(RW.SlotFromFields({ text = string.rep("x", 400) }).text), 250, "text capped")
+eq(RW.IsEmpty(RW.SlotFromFields({})), true, "all-empty fields give an empty slot")
+RW.OpenSlotEditor("quick", 1)
+RW.EditSlot("quick", 2)
 
 -- UI smoke test (stubbed frames): open, page, close, activate
 RW.OpenWheel()

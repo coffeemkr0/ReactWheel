@@ -11,3 +11,4 @@ Defaults.lua
 Targeting.lua
 Actions.lua
 Wheel.lua
+Editor.lua
