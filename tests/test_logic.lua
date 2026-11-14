@@ -100,11 +100,11 @@ S.emoteOnWhisper = false
 ReactWheelDB = { ver = 3, reactions = { "x" }, upText = "OK" }
 ReactWheelCharDB = nil
 RW.InitDB()
-eq(ReactWheelDB.ver, 6, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
+eq(ReactWheelDB.ver, 7, "db version"); eq(ReactWheelDB.reactions, nil, "old reactions dropped")
 eq(RW.P().wheels.quick.items[1].text, "OK", "upText carried over")
 eq(#RW.P().order, 4, "four wheels"); eq(RW.P().wheels.quick.slots, 8, "slots")
 eq(RW.P().wheels.quick.items[3].text, "\226\153\165", "heart text")
-ReactWheelDB.ver = 5; ReactWheelDB.profile.settings.sayMode = "direct"; RW.InitDB()
+ReactWheelDB.ver = 6; ReactWheelDB.profile.settings.sayMode = "direct"; RW.InitDB()
 eq(ReactWheelDB.profile.settings.sayMode, "auto", "migrated to auto")
 ReactWheelDB.profile.wheels.quick.auto = nil; ReactWheelDB.autoDefaults = nil; RW.InitDB()
 eq(ReactWheelDB.profile.wheels.quick.auto, "whisper", "auto hints backfilled")
@@ -127,29 +127,38 @@ eq(#_SENT, 1, "sent"); eq(_SENT[1][2], "PARTY", "channel"); eq(_EMOTES[1], "CLAP
 RW.Execute({ text = "ty", emote = "THANK" }, { dest = "WHISPER", target = "Bob" }, S)
 eq(_SENT[2][3], "Bob", "whisper target"); eq(#_EMOTES, 1, "no emote on whisper")
 
--- /say rule: chat box outdoors, direct inside instances (auto mode)
-local inst = false
-IsInInstance = function() return inst end
+-- /say: always try to send; if the game refuses, fall back to the chat box
 S.sayMode = "auto"; _SENT, _PREFILL = {}, {}
-RW.Execute({ text = "out" }, { dest = "SAY" }, S)
-eq(#_SENT, 0, "outdoors: not sent directly"); eq(_PREFILL[1], "/s out", "outdoors: goes to the chat box")
-RW.Execute({ text = "ty", emote = "THANK" }, { dest = "PARTY" }, S); eq(#_SENT, 1, "party unaffected outdoors")
-inst = true; _SENT, _PREFILL = {}, {}
-RW.Execute({ text = "in", emote = "WAVE" }, { dest = "SAY" }, S)
-eq(#_SENT, 1, "inside an instance: sent directly"); eq(_SENT[1][2], "SAY", "channel say"); eq(#_PREFILL, 0, "no chat box inside instance")
-inst = false; S.sayMode = "direct"; _SENT, _PREFILL = {}, {}
-RW.Execute({ text = "forced" }, { dest = "SAY" }, S); eq(#_SENT, 1, "direct mode always sends")
-S.sayMode = "prefill"; inst = true; RW.Execute({ text = "pf" }, { dest = "SAY" }, S); eq(_PREFILL[1], "/s pf", "prefill mode always uses the chat box")
-S.sayMode = "auto"; IsInInstance = nil
-eq(RW.SayNeedsChatBox(S), true, "no IsInInstance -> treat as outdoors")
--- game blocked a send anyway: fall back to the chat box
-S.sayMode = "direct"; _PREFILL = {}
+RW.Execute({ text = "hi", emote = "WAVE" }, { dest = "SAY" }, S)
+eq(#_SENT, 1, "say tried directly"); eq(#_PREFILL, 0, "no chat box when the send works")
+-- popup suppression: frames are taken off the block events during the call and restored afterwards, even on error
+local regs = {}
+local function fakeFrame(name) return { name = name, UnregisterEvent = function(f, e) regs[name .. e] = false end, RegisterEvent = function(f, e) regs[name .. e] = true end } end
+local ui, other = fakeFrame("ui"), fakeFrame("other")
+GetFramesRegisteredForEvent = function(ev) if ev == "ADDON_ACTION_BLOCKED" then return ui, other end return ui end
+regs.uiADDON_ACTION_BLOCKED, regs.uiADDON_ACTION_FORBIDDEN, regs.otherADDON_ACTION_BLOCKED = true, true, true
+local during
+RW.QuietCall(function() during = { regs.uiADDON_ACTION_BLOCKED, regs.otherADDON_ACTION_BLOCKED, regs.uiADDON_ACTION_FORBIDDEN } end)
+eq(during[1], false, "popup frame detached during call"); eq(during[2], false, "second frame detached"); eq(during[3], false, "forbidden event detached")
+eq(regs.uiADDON_ACTION_BLOCKED, true, "popup frame restored"); eq(regs.otherADDON_ACTION_BLOCKED, true, "second frame restored"); eq(regs.uiADDON_ACTION_FORBIDDEN, true, "forbidden restored")
+local ok = RW.QuietCall(function() error("boom") end)
+eq(ok, false, "error is contained"); eq(regs.uiADDON_ACTION_BLOCKED, true, "frames restored after an error")
+GetFramesRegisteredForEvent = nil
+-- game refuses the send: chat-box fallback
+_PREFILL = {}
 local realSend = SendChatMessage
 SendChatMessage = function() RW.OnActionBlocked("ReactWheel", "SendChatMessage()") end
 RW.Execute({ text = "yo" }, { dest = "SAY" }, S)
-eq(_PREFILL[1], "/s yo", "blocked say falls back to chat box")
-RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 1, "other addons ignored")
-SendChatMessage = realSend; S.sayMode = "auto"
+eq(_PREFILL[1], "/s yo", "refused say falls back to the chat box")
+RW.Execute({ text = "to party" }, { dest = "PARTY" }, S)
+eq(_PREFILL[2], "/p to party", "refused party message falls back with the right prefix")
+RW.OnActionBlocked("OtherAddon", "SendChatMessage()"); eq(#_PREFILL, 2, "other addons ignored")
+SendChatMessage = realSend
+-- always-chat-box mode
+S.sayMode = "prefill"; _SENT, _PREFILL = {}, {}
+RW.Execute({ text = "pf" }, { dest = "SAY" }, S); eq(#_SENT, 0, "prefill mode does not send"); eq(_PREFILL[1], "/s pf", "prefill mode uses the chat box")
+RW.Execute({ text = "ok" }, { dest = "PARTY" }, S); eq(#_SENT, 1, "prefill mode only affects /say")
+S.sayMode = "auto"
 
 -- slot editor field conversion
 local sl = RW.SlotFromFields({ label = "  hi ", text = "yo %t", emote = "wave", emoteWhen = "always", command = "", dest = "PARTY",

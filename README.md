@@ -41,7 +41,7 @@ If the addon is unsure (e.g. guild and party are both active), it asks you where
 Numbered chat channels (General, Trade...) are never used.
 
 ## About /say
-The game only lets an addon send `/say` or `/yell` in response to your own keypress while you are outdoors (this rule has applied since patch 8.2.5 / Classic 1.13.3). Inside dungeons, raids and battlegrounds it has no such limit. So by default ("Auto") a `/say` reaction is typed into your chat box outdoors for you to confirm with Enter, and is sent directly inside instances. Whispers, party, raid and guild always send directly. Change this under Settings > Targeting > "/say sending" or with `/rw say <auto|direct|prefill>`.
+The game restricts addons from sending `/say` and `/yell` outdoors unless the message comes from your own keypress (patch 8.2.5 / Classic 1.13.3 onward); whisper, party, raid and guild are not restricted. Whether a given wheel click is accepted can vary, so ReactWheel simply tries to send `/say` every time. If the game refuses, it quietly types the line into your chat box instead (no error popup) and you press Enter. Settings > Targeting > "/say sending" (or `/rw say <auto|prefill>`) can force the chat box every time.
 
 ## Emotes
 Reactions also play an emote, but by default only when bystanders can see it (say / party / raid), not for whispers or guild.

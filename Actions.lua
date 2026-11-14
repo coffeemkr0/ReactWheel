@@ -11,14 +11,32 @@ function RW.Sound(kind, S)
 end
 
 -- Blizzard rule (patch 8.2.5 / Classic 1.13.3+): /say and /yell sent by an addon need a hardware event in the
--- outdoor world; inside instances and battlegrounds they don't. So in "auto" mode /say goes to the chat box
--- outdoors (the player presses Enter) and is sent directly inside an instance.
+-- outdoor world. We can't tell in advance whether a given click will count, so "auto" mode just tries to send
+-- and, if the game refuses, quietly puts the line in the chat box (see QuietCall / OnActionBlocked).
 function RW.SayNeedsChatBox(S)
-	local mode = S.sayMode or "auto"
-	if mode == "prefill" then return true end
-	if mode == "direct" then return false end
-	local inInstance = IsInInstance and IsInInstance()
-	return not inInstance
+	return S.sayMode == "prefill"
+end
+
+-- Run fn while the game's "Interface action failed because of an AddOn" popup is switched off. A refused
+-- protected call isn't a Lua error (pcall can't see it): the game fires ADDON_ACTION_BLOCKED/FORBIDDEN and the
+-- default UI answers with a popup. We take those frames off the event for the duration of the call and always
+-- put them back; our own handler (RW.OnActionBlocked) still hears the event.
+local BLOCK_EVENTS = { "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN" }
+function RW.QuietCall(fn, ...)
+	local held = {}
+	if GetFramesRegisteredForEvent then
+		for _, ev in ipairs(BLOCK_EVENTS) do
+			for _, f in ipairs({ GetFramesRegisteredForEvent(ev) }) do
+				if f ~= RW.eventFrame and f.UnregisterEvent then
+					pcall(f.UnregisterEvent, f, ev)
+					held[#held + 1] = { f, ev }
+				end
+			end
+		end
+	end
+	local ok, err = pcall(fn, ...)
+	for _, h in ipairs(held) do pcall(h[1].RegisterEvent, h[1], h[2]) end
+	return ok, err
 end
 
 -- Does the slot need a chat destination at all? (emote-only and command slots do not)
@@ -72,7 +90,7 @@ function RW.OnActionBlocked(addon, func)
 	if ChatFrame_OpenChat then ChatFrame_OpenChat(prefix .. p.text) end
 	if not RW.blockedHinted then
 		RW.blockedHinted = true
-		RW.Print("The game blocked that message - press Enter to send it. Typing any chat message yourself first usually lifts the block.")
+		RW.Print("The game wouldn't let the addon send that /say from here, so it is in your chat box - press Enter. The addon tries to send directly every time and falls back like this when it can't.")
 	end
 end
 
@@ -92,15 +110,15 @@ function RW.Execute(slot, cand, S)
 				SendChatMessage(text, "WHISPER", nil, cand.target)
 			elseif cand.dest == "SAY" and RW.SayNeedsChatBox(S) and ChatFrame_OpenChat then
 				ChatFrame_OpenChat("/s " .. text)
-				if S.sayMode == "auto" and not RW.sayHinted then
-					RW.sayHinted = true
-					RW.Print("Outdoors the game only lets /say come from your own keypress, so press Enter to send it. (Inside dungeons, raids and battlegrounds it sends by itself.)")
-				end
 			else
-				-- If the game refuses anyway, ADDON_ACTION_* fires synchronously and
-				-- RW.OnActionBlocked puts the line in the chat box instead.
+				-- If the game refuses, ADDON_ACTION_* fires synchronously and RW.OnActionBlocked puts the
+				-- line in the chat box instead. For /say that refusal is routine, so keep the popup quiet.
 				RW.pendingSend = { dest = cand.dest, text = text }
-				SendChatMessage(text, cand.dest)
+				if cand.dest == "SAY" then
+					RW.QuietCall(SendChatMessage, text, "SAY")
+				else
+					SendChatMessage(text, cand.dest)
+				end
 				RW.pendingSend = nil
 			end
 		end

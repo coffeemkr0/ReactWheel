@@ -2,7 +2,7 @@
 ReactWheel = ReactWheel or {}
 local RW = ReactWheel
 
-RW.DB_VERSION = 6
+RW.DB_VERSION = 7
 RW.debug = false
 
 function RW.Print(msg)
@@ -153,8 +153,8 @@ function RW.InitDB()
 		db.profile = p
 	end
 	db.reactions, db.upText, db.downText = nil, nil, nil
-	if (db.ver or 0) < 6 then
-		-- v6: "auto" decides by location (chat box outdoors, direct in instances) from the documented game rule
+	if (db.ver or 0) < 7 then
+		-- v7: "auto" = always try to send directly and fall back to the chat box quietly
 		local function fix(p) if p and p.settings then p.settings.sayMode = "auto" end end
 		fix(db.profile); fix(ReactWheelCharDB.profile)
 	end
@@ -187,6 +187,7 @@ local OBSERVED = {
 }
 
 local frame = CreateFrame("Frame")
+RW.eventFrame = frame
 frame:RegisterEvent("VARIABLES_LOADED")
 for _, ev in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do pcall(frame.RegisterEvent, frame, ev) end
 for ev in pairs(OBSERVED) do pcall(frame.RegisterEvent, frame, ev) end -- skip events this client lacks
@@ -215,7 +216,7 @@ end
 local function Help()
 	RW.Print("Bind a key under Key Bindings > ReactWheel, then press it to open the wheel.")
 	RW.Print("Left-click a slice to send it, right-click to edit it, Esc to close. Scroll to change wheels.")
-	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <auto|direct|prefill> | /rw size | /rw debug | /rw reset")
+	RW.Print("/rw config | /rw wheel <name or number> | /rw profile <account|char> | /rw say <auto|prefill> | /rw size | /rw debug | /rw reset")
 end
 
 function RW.OpenConfig()
@@ -259,7 +260,7 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		RW.Print("debug " .. (RW.debug and "on" or "off"))
 		if RW.debug then
 			local d = RW.Targeting.Decide(RW.Targeting.Env(), RW.Targeting.ctx, RW.P().settings)
-			RW.Print("/say goes to the chat box here: " .. tostring(RW.SayNeedsChatBox(RW.P().settings)))
+			RW.Print("/say mode: " .. tostring(RW.P().settings.sayMode) .. " (auto = send directly, chat box if refused)")
 			RW.Print("would send to: " .. d.label .. " (" .. d.reason .. ", confidence " .. d.confidence .. ")")
 		end
 	elseif cmd == "size" then
@@ -279,7 +280,7 @@ SlashCmdList["REACTWHEEL"] = function(msg)
 		end
 	elseif cmd == "say" then
 		rest = string.lower(rest)
-		if rest == "auto" or rest == "direct" or rest == "prefill" then
+		if rest == "auto" or rest == "prefill" then
 			RW.P().settings.sayMode = rest
 			RW.Print("say mode: " .. rest)
 		else
