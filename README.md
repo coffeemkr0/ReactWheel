@@ -8,8 +8,10 @@
 | | |
 |---|---|
 | **Download** | [**Latest release**](https://github.com/coffeemkr0/ReactWheel/releases/latest) &middot; [All releases](https://github.com/coffeemkr0/ReactWheel/releases) |
-| **What changed** | [Changelog](CHANGELOG.md) |
+| **What changed** | [Changelog](CHANGELOG.md) &middot; [Release notes](https://github.com/coffeemkr0/ReactWheel/releases) |
 | **Need help?** | [User guide below](#quick-start) &middot; [Troubleshooting](#troubleshooting) &middot; [Report a problem](https://github.com/coffeemkr0/ReactWheel/issues) |
+
+> **New in 1.0.2:** the wheel remembers the one you picked (auto-switching only happens when your situation changes), the **Key bindings...** button works on newer clients, and the Targeting tab layout is fixed. See the [changelog](CHANGELOG.md).
 
 **Reply to chat with one click.** Press a key, a wheel of quick reactions appears at your cursor, click one — and it goes to the right place (the person who whispered you, your party, your raid, your guild or `/say`) along with a matching emote. Think of the reactions in Microsoft Teams, for WoW.
 
@@ -43,7 +45,7 @@
 3. Start the game. New files such as images only load on a full restart, so don't rely on `/reload` for a first install or an update that adds files.
 
 ## Quick start
-1. **Pick a key.** Press `Esc` → **Key Bindings** → **AddOns** → **ReactWheel**, and set **Reaction wheel (open / hold)**. (A welcome window offers a shortcut to this the first time you log in with no key set.)
+1. **Pick a key.** Press `Esc` → **Key Bindings** → **AddOns** → **ReactWheel**, and set **Reaction wheel (open / hold)**. (Shortcut: Settings > Display > **Key bindings...**, or the **Set key...** button in the welcome window that appears the first time you log in with no key set.)
 2. **Press your key.** The wheel opens around your mouse.
 3. **Click a reaction.** It's sent and the wheel closes.
 
