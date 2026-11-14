@@ -75,12 +75,12 @@ function RW.DefaultWheels()
 		social = {
 			name = "Social / Guild", slots = 8, auto = "solo",
 			items = {
-				slot("gz!", "gz!", "CONGRATULATE"),
+				slot("grats!", "grats!", "CONGRATULATE"),
 				slot("hi", "hi!", "HELLO"),
 				slot("bye", "bye!", "BYE"),
 				slot("nice", "nice!", "CHEER"),
 				slot("lol", "lol", "LAUGH"),
-				slot("o7", "o7", "SALUTE"),
+				slot("thanks!", "thanks!", "THANK"),
 				slot("welcome", "welcome!", "WELCOME"),
 				slot(HEART, HEART, "LOVE", { color = { 1, 0.4, 0.5 } }),
 			},

@@ -108,6 +108,14 @@ ReactWheelDB.ver = 6; ReactWheelDB.profile.settings.sayMode = "direct"; RW.InitD
 eq(ReactWheelDB.profile.settings.sayMode, "auto", "migrated to auto")
 ReactWheelDB.profile.wheels.quick.auto = nil; ReactWheelDB.autoDefaults = nil; RW.InitDB()
 eq(ReactWheelDB.profile.wheels.quick.auto, "whisper", "auto hints backfilled")
+eq(RW.P().wheels.social.items[1].text, "grats!", "default grats!"); eq(RW.P().wheels.social.items[6].text, "thanks!", "default thanks!"); eq(RW.P().wheels.social.items[6].emote, "THANK", "thanks emote")
+ReactWheelDB.profile.wheels.social.items[1] = { label = "gz!", text = "gz!", emote = "CONGRATULATE" }
+ReactWheelDB.profile.wheels.social.items[6] = { label = "o7", text = "o7", emote = "SALUTE" }
+ReactWheelDB.profile.wheels.social.items[2] = { label = "hi", text = "yo" }
+ReactWheelDB.socialRenamed = nil; RW.InitDB()
+eq(RW.P().wheels.social.items[1].text, "grats!", "old gz! migrated"); eq(RW.P().wheels.social.items[6].label, "thanks!", "old o7 migrated"); eq(RW.P().wheels.social.items[2].text, "yo", "custom slot untouched")
+ReactWheelDB.profile.wheels.social.items[1] = { label = "gz!", text = "my own gz" }
+ReactWheelDB.socialRenamed = nil; RW.InitDB(); eq(RW.P().wheels.social.items[1].text, "my own gz", "customised slot kept")
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"

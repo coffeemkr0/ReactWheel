@@ -184,6 +184,18 @@ function RW.InitDB()
 		fix(db.profile); fix(ReactWheelCharDB.profile)
 		db.autoDefaults = true
 	end
+	if not db.socialRenamed then
+		-- the Social / Guild defaults changed ("gz!" -> "grats!", "o7" -> "thanks!"); only touch slots still at the old default
+		local function fix(p)
+			local w = p and p.wheels and p.wheels.social
+			if not w then return end
+			local a, b = w.items[1], w.items[6]
+			if a and a.label == "gz!" and a.text == "gz!" then a.label, a.text = "grats!", "grats!" end
+			if b and b.label == "o7" and b.text == "o7" and b.emote == "SALUTE" then b.label, b.text, b.emote = "thanks!", "thanks!", "THANK" end
+		end
+		fix(db.profile); fix(ReactWheelCharDB.profile)
+		db.socialRenamed = true
+	end
 	db.ver = RW.DB_VERSION
 	Sanitize(db.profile)
 	if ReactWheelCharDB.profile then Sanitize(ReactWheelCharDB.profile) end
