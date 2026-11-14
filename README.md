@@ -4,7 +4,7 @@ A radial quick-reaction menu for WoW chat, inspired by Teams reactions.
 Hold a key, flick the mouse toward a reaction, release — it's sent to whoever last spoke to you
 (whisper, party, raid, or say only — never guild or channels).
 
-Defaults: thumbs up (sends `+1`), thumbs down (sends `-1`), `LOL  GG  thx!  <3  brb  ?!`
+Defaults: thumbs up (sends `√`), thumbs down (sends `▼`), `♥  LOL  GG  thanks!  omw  what?`
 
 ## Install
 Copy the `ReactWheel` folder into `Interface/AddOns/`.

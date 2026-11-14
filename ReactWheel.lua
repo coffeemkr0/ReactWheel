@@ -5,12 +5,12 @@ BINDING_HEADER_REACTWHEEL = "ReactWheel"
 BINDING_NAME_REACTWHEEL_SHOW = "Reaction wheel (hold)"
 BINDING_NAME_HEADER_REACTWHEEL = "ReactWheel" -- some clients look the header up as a binding name
 
-local DEFAULTS = { "{up}", "{down}", "LOL", "GG", "thx!", "<3", "brb", "?!" }
-local DB_VERSION = 2
+local DEFAULTS = { "{up}", "{down}", "\226\153\165", "LOL", "GG", "thanks!", "omw", "what?" }
+local DB_VERSION = 3
 -- Icon slots: drawn as a picture on the wheel; the chat text sent is shown here.
 local ICONS = {
-	["{up}"]   = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsUp",   r = 0.3, g = 1,   b = 0.3, send = "+1" },
-	["{down}"] = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsDown", r = 1,   g = 0.3, b = 0.3, send = "-1" },
+	["{up}"]   = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsUp",   r = 0.3, g = 1,   b = 0.3, send = "\226\136\154" },
+	["{down}"] = { tex = "Interface\\AddOns\\ReactWheel\\Textures\\ThumbsDown", r = 1,   g = 0.3, b = 0.3, send = "\226\150\188" },
 }
 
 local function Resolve(r)
@@ -96,19 +96,13 @@ local function IsWheelKey(k)
 	return k and (k == KeyBase(k1) or k == KeyBase(k2))
 end
 
--- True when the wheel key is a mouse button (no keyboard key-up to listen for).
-local function BoundToMouse()
-	local k1, k2 = GetBindingKey("REACTWHEEL_SHOW")
-	local a, b = KeyBase(k1), KeyBase(k2)
-	return (a and string.find(a, "BUTTON")) or (b and string.find(b, "BUTTON"))
-end
-
 local function Build()
 	wheel = CreateFrame("Frame", "ReactWheelFrame", UIParent)
 	wheel:SetWidth(RADIUS * 2 + BTN)
 	wheel:SetHeight(RADIUS * 2 + BTN)
 	wheel:SetFrameStrata("DIALOG")
 	wheel:Hide()
+	tinsert(UISpecialFrames, "ReactWheelFrame") -- Esc closes it
 
 	wheel.dest = wheel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	wheel.dest:SetPoint("CENTER", wheel, "CENTER", 0, 0)
@@ -130,6 +124,7 @@ local function Build()
 		b.hl:SetVertexColor(0.2, 0.6, 1, 0.6)
 		b.hl:Hide()
 		b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+		b.text:SetFont("Fonts\\ARIALN.TTF", 20) -- covers symbols like the heart
 		b.text:SetPoint("CENTER", b, "CENTER", 0, 0)
 		b.icon = b:CreateTexture(nil, "OVERLAY")
 		b.icon:SetWidth(44)
@@ -137,8 +132,10 @@ local function Build()
 		b.icon:SetPoint("CENTER", b, "CENTER", 0, 0)
 		Face(b, reactions[i])
 		b.index = i
-		b:SetScript("OnClick", function()
+		b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		b:SetScript("OnClick", function(f, btn)
 			local self = this or b
+			if (btn or arg1) == "RightButton" then wheel:Hide() return end -- right-click closes
 			Send(Resolve(Reactions()[self.index]))
 			wheel:Hide()
 		end)
@@ -182,9 +179,8 @@ function ReactWheel_Open()
 	wheel:Show()
 end
 
-function ReactWheel_Release(fromBinding)
+function ReactWheel_Release()
 	if not wheel or not wheel:IsVisible() then return end
-	if fromBinding and not BoundToMouse() then return end -- keyboard keys are handled by OnKeyUp
 	wheel:Hide()
 	if selected then Send(Resolve(Reactions()[selected])) end
 end
