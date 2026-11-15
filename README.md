@@ -70,7 +70,7 @@ Tips:
 ## Where do my reactions go?
 By default every reaction uses **smart reply**. It picks the first of these that applies:
 
-1. **A whisper from the last 30 seconds** → replies to that person
+1. **A whisper from the last 30 seconds** → replies to that person (including Battle.net friends)
 2. **Guild chat from the last 20 seconds** → guild
 3. **You're in a group** → raid chat if you're in a raid, otherwise party
 4. **Someone spoke in `/say` recently** → say

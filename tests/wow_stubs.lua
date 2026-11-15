@@ -45,3 +45,6 @@ _PREFILL = {}
 function ChatFrame_OpenChat(m) _PREFILL[#_PREFILL + 1] = m end
 function UnitGUID() return "Player-1" end
 Minimap = proxy()
+
+_BN = {}
+function BNSendWhisper(id, text) _BN[#_BN + 1] = { id, text } end

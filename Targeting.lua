@@ -7,11 +7,13 @@ local Tg = { ctx = {} }
 RW.Targeting = Tg
 
 -- Record that something was heard. kind: WHISPER | GROUP | GUILD | SAY.
-function Tg.Observe(kind, sender, now, S)
+function Tg.Observe(kind, sender, now, S, bnid, bnName)
 	local ctx = Tg.ctx
 	if kind == "WHISPER" then
-		if sender and not (S and S.ignore and S.ignore[RW.BaseName(sender)]) then
-			ctx.whisper = { sender = sender, time = now }
+		local who = bnName or (sender and RW.BaseName(sender))
+		if sender and not (S and S.ignore and who and S.ignore[who]) then
+			-- bnid is set for Battle.net friend whispers, which are answered with BNSendWhisper instead of a normal whisper
+			ctx.whisper = { sender = sender, time = now, bnid = bnid, name = bnName }
 			ctx.unstick = false
 		end
 	elseif kind == "GROUP" then ctx.group = now
@@ -95,8 +97,10 @@ function Tg.Decide(env, ctx, S)
 
 	local function whisperC()
 		local age = math.floor(wAge)
-		return cand("WHISPER", w.sender, "Whisper " .. RW.BaseName(w.sender),
-			"whisper from " .. RW.BaseName(w.sender) .. " " .. age .. "s ago", age)
+		local who = w.name or RW.BaseName(w.sender)
+		local c = cand("WHISPER", w.sender, "Whisper " .. who, "whisper from " .. who .. " " .. age .. "s ago", age)
+		c.bnid = w.bnid
+		return c
 	end
 	local function groupC()
 		if env.inRaid then return cand("RAID", nil, "Raid", "in a raid") end

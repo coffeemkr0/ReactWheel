@@ -218,6 +218,7 @@ end
 ---------------------------------------------------------------------------
 local OBSERVED = {
 	CHAT_MSG_WHISPER = "WHISPER",
+	CHAT_MSG_BN_WHISPER = "BNWHISPER", -- Battle.net friend whispers: a different channel, answered with BNSendWhisper
 	CHAT_MSG_PARTY = "GROUP", CHAT_MSG_PARTY_LEADER = "GROUP",
 	CHAT_MSG_RAID = "GROUP", CHAT_MSG_RAID_LEADER = "GROUP",
 	CHAT_MSG_INSTANCE_CHAT = "GROUP", CHAT_MSG_INSTANCE_CHAT_LEADER = "GROUP",
@@ -231,7 +232,24 @@ RW.eventFrame = frame
 frame:RegisterEvent("VARIABLES_LOADED")
 for _, ev in ipairs({ "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do pcall(frame.RegisterEvent, frame, ev) end
 for ev in pairs(OBSERVED) do pcall(frame.RegisterEvent, frame, ev) end -- skip events this client lacks
-RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
+-- Display name of a Battle.net friend (the name in the whisper event is an escaped placeholder).
+function RW.BNName(id, fallback)
+	if id then
+		if C_BattleNet and C_BattleNet.GetAccountInfoByID then
+			local ok, info = pcall(C_BattleNet.GetAccountInfoByID, id)
+			if ok and type(info) == "table" and info.accountName then return info.accountName end
+		end
+		if BNGetFriendInfoByID then
+			local ok, _, name = pcall(BNGetFriendInfoByID, id)
+			if ok and type(name) == "string" and name ~= "" then return name end
+		end
+	end
+	local clean = string.gsub(fallback or "", "|K[^|]*|k", "")
+	if clean ~= "" then return clean end
+	return "Battle.net friend"
+end
+
+RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 	if event == "VARIABLES_LOADED" then RW.InitDB() return end
 	if event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then
 		if RW.debug then RW.Print("blocked-action event: " .. tostring(a1) .. " / " .. tostring(a2)) end
@@ -241,6 +259,12 @@ RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a1
 	if event == "CHAT_MSG_SAY" and RW.NoteSay then RW.NoteSay(a1) end -- did our /say actually go out?
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
+	if kind == "BNWHISPER" then
+		-- the sender's Battle.net account id is the 13th argument; without it we can't answer
+		local id = tonumber(a13)
+		if id then RW.Targeting.Observe("WHISPER", a2, GetTime(), RW.P().settings, id, RW.BNName(id, a2)) end
+		return
+	end
 	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer
 	RW.Targeting.Observe(kind, a2, GetTime(), RW.P().settings)
 end

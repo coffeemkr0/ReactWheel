@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Battle.net whispers:** replying to a Battle.net friend's whisper now works. The addon tracks those whispers and answers them through Battle.net, instead of replying to the last character whisper.
+
 ## 1.0.2
 - **Wheel memory:** with "Switch wheel when my situation changes" on, the wheel now only switches when your situation actually changes (whisper, group, solo). Before, it jumped back to the situation's wheel on every open and forgot the one you had picked. The next / previous wheel key bindings also start from the wheel you used last.
 - **Key bindings button:** Settings > Display > "Key bindings..." (and "Set key..." in the welcome window) now opens the game's key bindings on newer clients; it used to do nothing.

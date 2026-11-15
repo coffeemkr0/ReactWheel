@@ -76,6 +76,20 @@ eq(Tg.Decide(env({ inParty = true }), Tg.ctx, S3).dest, "WHISPER", "stick overri
 Tg.OnSent("PARTY", S3)
 eq(Tg.Decide(env({ inParty = true }), Tg.ctx, S3).dest, "PARTY", "stick released after other send")
 
+-- Battle.net friend whispers are answered through BNSendWhisper
+fresh(); Tg.Observe("WHISPER", "|Kg12|k", 990, S, 77, "Friend#1234")
+d = Tg.Decide(env({ inParty = true }), Tg.ctx, S)
+eq(d.dest, "WHISPER", "bn whisper wins"); eq(d.bnid, 77, "bn id carried"); eq(d.label, "Whisper Friend#1234", "bn label uses the friend's name")
+_SENT, _BN = {}, {}
+RW.Execute({ text = "hi" }, d, S)
+eq(#_SENT, 0, "no normal whisper for a bn friend"); eq(_BN[1][1], 77, "sent to the bn account id"); eq(_BN[1][2], "hi", "bn text")
+Tg.Observe("WHISPER", "Bob-Realm", 995, S)                      -- a later normal whisper replaces it
+d = Tg.Decide(env({}), Tg.ctx, S); eq(d.bnid, nil, "latest whisper wins (normal)"); eq(d.target, "Bob-Realm", "normal whisper target")
+Tg.Observe("WHISPER", "|Kg12|k", 996, S, 77, "Friend#1234")
+eq(Tg.Decide(env({}), Tg.ctx, S).bnid, 77, "latest whisper wins (bn)")
+fresh(); local SI = RW.Copy(S); SI.ignore = { ["Friend#1234"] = true }
+Tg.Observe("WHISPER", "|Kg12|k", 990, SI, 77, "Friend#1234"); eq(Tg.ctx.whisper, nil, "ignored bn friend not recorded")
+eq(RW.BNName(nil, "|Kg9|k"), "Battle.net friend", "placeholder name cleaned")
 -- fixed destinations
 local e = env({ inParty = true, inGuild = false, targetName = "Carl" })
 eq(Tg.Fixed("PARTY", e).dest, "PARTY", "fixed party")
@@ -122,6 +136,11 @@ ReactWheelDB.socialMyBad = nil; RW.InitDB()
 eq(RW.P().wheels.social.items[7].label, "my bad", "old welcome migrated"); eq(RW.P().wheels.social.items[7].emote, "APOLOGIZE", "migrated emote")
 ReactWheelDB.profile.wheels.social.items[7] = { label = "welcome", text = "welcome to my guild" }
 ReactWheelDB.socialMyBad = nil; RW.InitDB(); eq(RW.P().wheels.social.items[7].text, "welcome to my guild", "customised slot 7 kept")
+fresh()
+RW.OnEvent(nil, "CHAT_MSG_BN_WHISPER", "hello", "|Kg9|k", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 55)
+eq(Tg.ctx.whisper and Tg.ctx.whisper.bnid, 55, "bn whisper event recorded with the account id")
+fresh(); RW.OnEvent(nil, "CHAT_MSG_BN_WHISPER", "hello", "|Kg9|k"); eq(Tg.ctx.whisper, nil, "bn whisper without an id is ignored")
+fresh()
 -- profiles
 ReactWheelCharDB.profile = RW.Copy(ReactWheelDB.profile); ReactWheelCharDB.useChar = true
 ReactWheelCharDB.profile.current = "social"

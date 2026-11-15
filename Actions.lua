@@ -123,7 +123,9 @@ function RW.Execute(slot, cand, S)
 	elseif cand then
 		local text = RW.Expand(slot.text or "")
 		if text ~= "" then
-			if cand.dest == "WHISPER" then
+			if cand.dest == "WHISPER" and cand.bnid and BNSendWhisper then
+				BNSendWhisper(cand.bnid, text) -- Battle.net friend
+			elseif cand.dest == "WHISPER" then
 				SendChatMessage(text, "WHISPER", nil, cand.target)
 			elseif cand.dest == "SAY" and RW.SayNeedsChatBox(S) and ChatFrame_OpenChat then
 				ChatFrame_OpenChat("/s " .. text)
