@@ -1,7 +1,7 @@
 # ReactWheel
 
-[![Latest release](https://img.shields.io/github/v/release/coffeemkr0/ReactWheel?label=latest%20release&sort=semver)](https://github.com/coffeemkr0/ReactWheel/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/coffeemkr0/ReactWheel/total?label=downloads)](https://github.com/coffeemkr0/ReactWheel/releases)
+[![Latest release](https://img.shields.io/github/v/release/coffeemkr0/ReactWheel?label=latest%20release&sort=semver&cacheSeconds=300)](https://github.com/coffeemkr0/ReactWheel/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/coffeemkr0/ReactWheel/total?label=downloads&cacheSeconds=300)](https://github.com/coffeemkr0/ReactWheel/releases)
 [![Tests](https://github.com/coffeemkr0/ReactWheel/actions/workflows/ci.yml/badge.svg)](https://github.com/coffeemkr0/ReactWheel/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
