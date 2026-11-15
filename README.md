@@ -11,7 +11,7 @@
 | **What changed** | [Changelog](CHANGELOG.md) &middot; [Release notes](https://github.com/coffeemkr0/ReactWheel/releases) |
 | **Need help?** | [User guide below](#quick-start) &middot; [Troubleshooting](#troubleshooting) &middot; [Report a problem](https://github.com/coffeemkr0/ReactWheel/issues) |
 
-> **New in 1.0.2:** the wheel remembers the one you picked (auto-switching only happens when your situation changes), the **Key bindings...** button works on newer clients, and the Targeting tab layout is fixed. See the [changelog](CHANGELOG.md).
+> **New in 1.0.3:** replying to **Battle.net friend** whispers now works. (1.0.2: the wheel remembers the one you picked, and the **Key bindings...** button and Targeting tab layout were fixed.) See the [changelog](CHANGELOG.md).
 
 **Reply to chat with one click.** Press a key, a wheel of quick reactions appears at your cursor, click one — and it goes to the right place (the person who whispered you, your party, your raid, your guild or `/say`) along with a matching emote. Think of the reactions in Microsoft Teams, for WoW.
 

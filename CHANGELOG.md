@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.3
 - **Battle.net whispers:** replying to a Battle.net friend's whisper now works. The addon tracks those whispers and answers them through Battle.net, instead of replying to the last character whisper.
 
 ## 1.0.2
