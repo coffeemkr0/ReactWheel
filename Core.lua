@@ -30,8 +30,15 @@ local function fill(dst, src)
 end
 RW.FillDefaults = fill
 
+-- In combat and in some instances the game hands addons chat text and sender names as "secret"
+-- values. They can be stored and passed to widgets, but any string operation, comparison or
+-- concatenation on them raises an error. Every chat value is checked with this before use.
+function RW.IsSecret(v)
+	return issecretvalue ~= nil and issecretvalue(v) and true or false
+end
+
 function RW.BaseName(n)
-	if not n then return nil end
+	if not n or RW.IsSecret(n) then return nil end
 	return string.match(n, "^([^%-]+)") or n
 end
 
@@ -256,17 +263,28 @@ RW.OnEvent = function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a1
 		RW.OnActionBlocked(a1, a2)
 		return
 	end
-	if event == "CHAT_MSG_SAY" and RW.NoteSay then RW.NoteSay(a1) end -- did our /say actually go out?
+	if event == "CHAT_MSG_SAY" and RW.NoteSay and not RW.IsSecret(a1) then RW.NoteSay(a1) end -- did our /say actually go out?
 	local kind = OBSERVED[event]
 	if not kind or not ReactWheelDB or not ReactWheelDB.profile then return end
 	if kind == "BNWHISPER" then
 		-- the sender's Battle.net account id is the 13th argument; without it we can't answer
+		if RW.IsSecret(a13) then return end
 		local id = tonumber(a13)
-		if id then RW.Targeting.Observe("WHISPER", a2, GetTime(), RW.P().settings, id, RW.BNName(id, a2)) end
+		if id then
+			local who = RW.BNName(id, (not RW.IsSecret(a2)) and a2 or nil) -- a hidden name: the friend's name is looked up by id
+			RW.Targeting.Observe("WHISPER", who, GetTime(), RW.P().settings, id, who)
+		end
 		return
 	end
-	if RW.BaseName(a2) == UnitName("player") then return end -- our own messages say nothing about who to answer
-	RW.Targeting.Observe(kind, a2, GetTime(), RW.P().settings)
+	local sender = a2
+	if RW.IsSecret(sender) then
+		-- we can still tell that someone spoke (group / guild / say), but not who: a whisper from an
+		-- unreadable name can't be replied to, so it is skipped
+		if kind == "WHISPER" then return end
+		sender = nil
+	end
+	if RW.BaseName(sender) == UnitName("player") then return end -- our own messages say nothing about who to answer
+	RW.Targeting.Observe(kind, sender, GetTime(), RW.P().settings)
 end
 frame:SetScript("OnEvent", RW.OnEvent)
 

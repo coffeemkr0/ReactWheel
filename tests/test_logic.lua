@@ -382,5 +382,32 @@ RW.OpenWheel(); RW.Activate(1, "LeftButton", false, false); RW.CloseWheel()
 SlashCmdList.REACTWHEEL("size font 1"); SlashCmdList.REACTWHEEL("size hub 1"); SlashCmdList.REACTWHEEL("size buttons 56")
 SlashCmdList.REACTWHEEL("debug"); SlashCmdList.REACTWHEEL("help")
 
+-- secret chat values (combat / instances): never an error, and sensible behaviour
+local SECRET = {}
+local function secret() return setmetatable({}, SECRET) end
+issecretvalue = function(v) return getmetatable(v) == SECRET end
+RW.InitDB()
+Tg.ctx = {}
+eq(RW.BaseName(secret()), nil, "a secret name has no base name")
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_PARTY", secret(), secret()), true, "party chat from a secret sender does not error")
+eq(Tg.ctx.group ~= nil, true, "but it still counts as group chat")
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_GUILD", secret(), secret()), true, "guild chat from a secret sender does not error")
+eq(Tg.ctx.guild ~= nil, true, "and counts as guild chat")
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_SAY", secret(), secret()), true, "say from a secret sender does not error")
+eq(Tg.ctx.say ~= nil, true, "and counts as say")
+Tg.ctx = {}
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_WHISPER", secret(), secret()), true, "a whisper from a secret sender does not error")
+eq(Tg.ctx.whisper, nil, "but is not tracked: there is nobody readable to reply to")
+RW.sayWatch = { text = "hi", done = false }
+eq(pcall(RW.NoteSay, secret()), true, "secret /say text does not error"); eq(RW.sayWatch.done, false, "and is ignored")
+RW.sayWatch = nil
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_BN_WHISPER", secret(), secret(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 55), true, "a Battle.net whisper with a secret name does not error")
+eq(Tg.ctx.whisper ~= nil and Tg.ctx.whisper.bnid, 55, "it is tracked by account id")
+eq(type(Tg.ctx.whisper.name), "string", "with a readable fallback name")
+Tg.ctx = {}
+eq(pcall(RW.OnEvent, nil, "CHAT_MSG_BN_WHISPER", secret(), secret(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, secret()), true, "a secret account id does not error")
+eq(Tg.ctx.whisper, nil, "and is not tracked")
+issecretvalue = nil
+
 print(string.format("%d checks, %d failed", total, fails))
 if fails > 0 then error("tests failed") end

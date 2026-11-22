@@ -107,6 +107,7 @@ end
 
 -- Called when a CHAT_MSG_SAY arrives: if it is the line we just sent, the send worked.
 function RW.NoteSay(text)
+	if RW.IsSecret(text) then return end
 	local w = RW.sayWatch
 	if w and not w.done and text == w.text then w.done = true end
 end
