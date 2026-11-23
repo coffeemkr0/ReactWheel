@@ -57,7 +57,7 @@ That's all you need. Everything else below is optional.
 | Open the wheel | Press your key (it opens at the cursor; you can change it to the screen centre) |
 | Send a reaction | **Left-click** a slice |
 | Close without sending | Press `Esc`, press your key again, click outside the wheel, or click the **x** in the middle |
-| Switch to another wheel | **Scroll the mouse wheel**, or click the **<** and **>** arrows in the middle (the middle shows "1/4" etc.) |
+| Switch to another wheel | **Scroll the mouse wheel** (it stops at the first and last wheel), or click the **<** and **>** arrows in the middle (the middle shows "1/4" etc.; these wrap round) |
 | Edit or move a reaction | **Right-click** the slice for a small menu: **Slot settings...** (edit it) or **Swap with another slot...** (then click the slice to swap with; click the same slice or right-click to cancel) |
 | Open a sub-wheel | Slices set up as "opens another wheel" do so on click; the **<** button in the middle goes back |
 

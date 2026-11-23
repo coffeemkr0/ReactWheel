@@ -366,6 +366,17 @@ eq(#ev.commands, 1, "commands listed for confirmation"); eq(#w1.items, 12, "item
 RW.OpenWheel()
 RW.PageWheel(1); eq(RW.P().current, "dungeon", "paged forward")
 RW.PageWheel(-1); eq(RW.P().current, "quick", "paged back")
+-- the mouse wheel stops at the first and last wheel; the arrows / keys still wrap
+local order = RW.P().order
+RW.PageWheel(-1, true); eq(RW.P().current, order[1], "mouse wheel up on the first wheel does nothing")
+RW.PageWheel(1, true); eq(RW.P().current, order[2], "mouse wheel down moves on")
+for _ = 1, #order + 2 do RW.PageWheel(1, true) end
+eq(RW.P().current, order[#order], "mouse wheel stops at the last wheel")
+RW.PageWheel(1, true); eq(RW.P().current, order[#order], "and does not wrap to the first")
+RW.PageWheel(1); eq(RW.P().current, order[1], "the arrows still wrap round")
+RW.PageWheel(-1); eq(RW.P().current, order[#order], "in both directions")
+for _ = 1, #order - 1 do RW.PageWheel(-1, true) end
+eq(RW.P().current, order[1], "back at the first wheel for the tests that follow")
 Tg.ctx = {}; _SENT = {}
 RW.Activate(4, "LeftButton", false, false)  -- LOL; solo, nothing heard -> low confidence, only 1-2 alts
 RW.BindingUp(); RW.BindingDown(); RW.BindingDown()

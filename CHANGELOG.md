@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.5
+- **The mouse wheel no longer wraps around:** scrolling stops at the first and last wheel. The `<` `>` arrows in the centre and the next / previous key bindings still wrap.
+
 ## 1.0.4
 - **Fix: "attempt to perform string conversion on a secret string value" errors.** In combat and in some instances the game hides chat sender names and message text from addons. ReactWheel now checks for hidden values before touching them: group, guild and say chat still count as "someone spoke" without the name, a whisper from a hidden name is skipped (there is nobody readable to reply to), and a hidden Battle.net name is looked up by account id.
 

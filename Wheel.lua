@@ -335,12 +335,15 @@ function RW.EditSlot(wheelId, idx)
 	else RW.Print("The slot editor arrives in the next update.") end
 end
 
-function RW.PageWheel(delta)
+-- delta: +1 next / -1 previous. stopAtEnds (the mouse wheel): do nothing at the first / last wheel
+-- instead of wrapping round; the arrows and key bindings still wrap.
+function RW.PageWheel(delta, stopAtEnds)
 	local p = P()
 	if not (wheel and wheel:IsShown()) then RW.OpenWheel(p.current) end -- page from the wheel you used last
 	local pos = 1
 	for i, id in ipairs(p.order) do if id == state.shown then pos = i end end
 	local n = #p.order
+	if stopAtEnds and (pos + delta < 1 or pos + delta > n) then return end
 	pos = ((pos - 1 + delta) % n) + 1
 	state.stack = {}
 	state.shown = p.order[pos]
@@ -421,7 +424,7 @@ local function Build()
 	catcher:EnableMouseWheel(true)
 	catcher:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	catcher:SetScript("OnClick", function() if RW.HideSlotMenu() then return end RW.CloseWheel() end)
-	catcher:SetScript("OnMouseWheel", function(_, d) RW.PageWheel(d > 0 and -1 or 1) end)
+	catcher:SetScript("OnMouseWheel", function(_, d) RW.PageWheel(d > 0 and -1 or 1, true) end)
 	catcher:Hide()
 
 	wheel = CreateFrame("Frame", "ReactWheelFrame", UIParent)
@@ -548,7 +551,7 @@ local function Build()
 			RW.CloseWheel()
 		end
 	end)
-	wheel:SetScript("OnMouseWheel", function(_, d) RW.PageWheel(d > 0 and -1 or 1) end)
+	wheel:SetScript("OnMouseWheel", function(_, d) RW.PageWheel(d > 0 and -1 or 1, true) end)
 	wheel:SetScript("OnHide", function()
 		catcher:Hide()
 		HidePicker()
