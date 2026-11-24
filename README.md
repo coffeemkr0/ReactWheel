@@ -181,7 +181,7 @@ Most reactions play a matching emote (nod, laugh, clap, thank…). Emotes can on
 | Something looks wrong | Run `/rw debug`, and open an issue with what it prints |
 
 ## For developers
-**Release:** `scripts/package.sh` builds `dist/ReactWheel-<version>.zip` (addon files only). Pushing a tag like `v1.0.0` runs the tests and publishes that zip as a GitHub release automatically; every push also runs the tests (`.github/workflows`).
+**Release:** `scripts/package.sh` builds `dist/ReactWheel-<version>.zip` (addon files only). To release, bump `## Version:` in `ReactWheel.toc`, add a `## <version>` section to `CHANGELOG.md` and push to `main`: the *Auto release* workflow runs the tests, builds the zip, creates the `v<version>` tag and publishes the release with that changelog section as the notes. It only acts when the version line changes and never touches an existing tag. To publish the current version by hand: Actions > *Auto release* > *Run workflow*. Pushing a `v*` tag yourself also still works (the *Release* workflow attaches the zip). Every push runs the tests.
 
 Source layout:
 

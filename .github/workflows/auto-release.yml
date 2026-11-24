@@ -1,0 +1,47 @@
+name: Auto release
+# Publishes a GitHub release (tag + zip + notes from CHANGELOG.md) when the "## Version:" line of the
+# .toc changes on main. Run it by hand (Actions > Auto release > Run workflow) to publish the current
+# version if its tag does not exist yet. Existing tags are never touched.
+on:
+  push:
+    branches: [main]
+    paths: ["*.toc"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide
+        id: d
+        run: scripts/release_check.sh "${{ github.event_name }}" "${{ github.event.before }}" | tee -a "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.d.outputs.release == 'true'
+        with:
+          python-version: "3.12"
+      - name: Test
+        if: steps.d.outputs.release == 'true'
+        run: |
+          pip install lupa
+          python tests/run_tests.py
+      - name: Package
+        if: steps.d.outputs.release == 'true'
+        run: scripts/package.sh "${{ steps.d.outputs.tag }}"
+      - name: Publish release
+        if: steps.d.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          name="${GITHUB_REPOSITORY#*/}"
+          scripts/release_notes.sh "${{ steps.d.outputs.version }}" > notes.md
+          if [ -s notes.md ]; then
+            gh release create "${{ steps.d.outputs.tag }}" dist/*.zip --target "$GITHUB_SHA" \
+              --title "$name ${{ steps.d.outputs.version }}" --notes-file notes.md
+          else
+            gh release create "${{ steps.d.outputs.tag }}" dist/*.zip --target "$GITHUB_SHA" \
+              --title "$name ${{ steps.d.outputs.version }}" --generate-notes
+          fi
