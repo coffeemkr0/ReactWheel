@@ -1,10 +1,15 @@
 # Changelog
 
-## 1.0.5
+## 1.0.6
+Rolls up 1.0.4 and 1.0.5, which were never released separately.
+- **Fix: "attempt to perform string conversion on a secret string value" errors** in combat and instances. The game hides chat sender names and message text from addons there. ReactWheel no longer touches hidden values: group, guild and say chat still count as "someone spoke", a whisper from a hidden name is skipped (there is nobody readable to reply to), and a hidden Battle.net name is looked up by account id.
+- **The mouse wheel no longer wraps around:** scrolling stops at the first and last wheel. The `<` `>` arrows in the centre and the next / previous key bindings still wrap.
+
+## 1.0.5 (not released on its own; included in 1.0.6)
 - **The mouse wheel no longer wraps around:** scrolling stops at the first and last wheel. The `<` `>` arrows in the centre and the next / previous key bindings still wrap.
 - **Includes the 1.0.4 fix** (1.0.4 was never released on its own): the "attempt to perform string conversion on a secret string value" errors in combat and instances are fixed. Chat sender names and text that the game hides are no longer touched; group, guild and say chat still count as "someone spoke", a whisper from a hidden name is skipped, and a hidden Battle.net name is looked up by account id.
 
-## 1.0.4
+## 1.0.4 (not released on its own; included in 1.0.6)
 - **Fix: "attempt to perform string conversion on a secret string value" errors.** In combat and in some instances the game hides chat sender names and message text from addons. ReactWheel now checks for hidden values before touching them: group, guild and say chat still count as "someone spoke" without the name, a whisper from a hidden name is skipped (there is nobody readable to reply to), and a hidden Battle.net name is looked up by account id.
 
 ## 1.0.3

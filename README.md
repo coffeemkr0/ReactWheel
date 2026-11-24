@@ -11,7 +11,7 @@
 | **What changed** | [Changelog](CHANGELOG.md) &middot; [Release notes](https://github.com/coffeemkr0/ReactWheel/releases) |
 | **Need help?** | [User guide below](#quick-start) &middot; [Troubleshooting](#troubleshooting) &middot; [Report a problem](https://github.com/coffeemkr0/ReactWheel/issues) |
 
-> **New in 1.0.5:** the mouse wheel stops at the first and last wheel instead of wrapping round, and the "secret string value" errors in combat and instances are fixed (1.0.4). (1.0.3: replying to **Battle.net friend** whispers works.) See the [changelog](CHANGELOG.md).
+> **New in 1.0.6:** the "secret string value" errors in combat and instances are fixed, and the mouse wheel stops at the first and last wheel instead of wrapping round. (1.0.3: replying to **Battle.net friend** whispers works.) See the [changelog](CHANGELOG.md).
 
 **Reply to chat with one click.** Press a key, a wheel of quick reactions appears at your cursor, click one — and it goes to the right place (the person who whispered you, your party, your raid, your guild or `/say`) along with a matching emote. Think of the reactions in Microsoft Teams, for WoW.
 

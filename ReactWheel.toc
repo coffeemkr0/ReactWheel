@@ -2,7 +2,7 @@
 ## Title: ReactWheel
 ## Notes: Radial menu of quick chat reactions with smart reply targeting. Multiple wheels, fully customizable.
 ## Author: coffeemkr0
-## Version: 1.0.5
+## Version: 1.0.6
 ## SavedVariables: ReactWheelDB
 ## SavedVariablesPerCharacter: ReactWheelCharDB
 Locales.lua
